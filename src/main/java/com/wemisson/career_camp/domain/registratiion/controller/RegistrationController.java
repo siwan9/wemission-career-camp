@@ -29,7 +29,7 @@ public class RegistrationController {
 			redirectAttributes.addFlashAttribute("success",
 				"successfully registered");
 
-			return "redirect:/";
+			return "redirect:/home";
 
 		} catch (Exception e) {
 

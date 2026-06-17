@@ -71,7 +71,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -t careercamp:latest .
+          docker buildx build --platform linux/arm64 -t careercamp:latest .
 
       - name: Export Docker Image
         run: |
@@ -90,7 +90,7 @@ jobs:
 
             docker load < /home/ubuntu/careercamp.tar
 
-            docker-compose -f /home/ubuntu/docker-compose.yml up -d --force-recreate
-
+            docker compose -f /home/ubuntu/docker-compose.yml up -d --no-deps --force-recreate spring-boot-app
+            
             docker image prune -f
           EOF

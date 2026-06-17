@@ -90,9 +90,7 @@ jobs:
 
             docker load < /home/ubuntu/careercamp.tar
 
-            docker compose \
-              -f /home/ubuntu/docker-compose.yml \
-              up -d --force-recreate
+            docker-compose -f /home/ubuntu/docker-compose.yml up -d --force-recreate
 
             docker image prune -f
           EOF

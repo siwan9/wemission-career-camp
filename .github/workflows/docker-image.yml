@@ -1,0 +1,98 @@
+name: Java CI with Gradle and Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
+env:
+  SSH_HOST: ${{ secrets.SSH_HOST }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Grant execute permission to gradlew
+        run: chmod +x gradlew
+
+      - name: Build with Gradle
+        run: ./gradlew clean build
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-libs
+          path: build/libs/*.jar
+
+  deploy:
+    needs: build
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-libs
+          path: build/libs
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Build Docker Image
+        run: |
+          docker build -t careercamp:latest .
+
+      - name: Export Docker Image
+        run: |
+          docker save careercamp:latest | gzip > careercamp.tar.gz
+
+      - name: Upload Image To Server
+        run: |
+          scp careercamp.tar.gz ubuntu@$SSH_HOST:/home/ubuntu/
+
+      - name: Deploy On Server
+        run: |
+          ssh ubuntu@$SSH_HOST << 'EOF'
+            set -e
+
+            gunzip -f /home/ubuntu/careercamp.tar.gz
+
+            docker load < /home/ubuntu/careercamp.tar
+
+            docker compose \
+              -f /home/ubuntu/docker-compose.yml \
+              up -d --force-recreate
+
+            docker image prune -f
+          EOF

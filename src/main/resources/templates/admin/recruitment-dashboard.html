@@ -10,6 +10,8 @@
 
     <link rel="stylesheet"
           th:href="@{/css/admin/recruitment-dashboard.css}">
+    <link rel="stylesheet"
+          th:href="@{/css/footer.css}">
 
 </head>
 
@@ -28,11 +30,15 @@
 
             </a>
 
-            <h1 class="page-title">
+            <h1
+                    class="page-title"
+                    th:text="${recruitment.name}">
                 2026 여름 진로캠프
             </h1>
 
-            <p class="page-subtitle">
+            <p
+                    class="page-subtitle"
+                    th:text="${recruitment.open ? '모집중' : '종료'}">
                 모집중
             </p>
 
@@ -45,25 +51,77 @@
     <section class="stats-grid">
 
         <div class="stat-card">
-            <div class="stat-value">327</div>
+            <div
+                    class="stat-value"
+                    th:text="${participantCount}">327</div>
             <div class="stat-label">신청자</div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-value">295</div>
-            <div class="stat-label">배정 완료</div>
+            <div
+                    class="stat-value"
+                    th:text="${morningApplicationCount}">0</div>
+            <div class="stat-label">오전 신청</div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-value">32</div>
-            <div class="stat-label">미배정</div>
+            <div
+                    class="stat-value"
+                    th:text="${afternoonApplicationCount}">0</div>
+            <div class="stat-label">오후 신청</div>
         </div>
 
         <div class="stat-card">
-            <div class="stat-value">12</div>
+            <div
+                    class="stat-value"
+                    th:text="${lectureCount}">0</div>
             <div class="stat-label">강의 수</div>
         </div>
 
+    </section>
+
+    <section class="lecture-overview">
+        <div class="lecture-column">
+            <h2>
+                오전 특강
+            </h2>
+            <div
+                    th:if="${#lists.isEmpty(morningLectures)}"
+                    class="empty-list">
+                등록된 오전 특강이 없습니다.
+            </div>
+            <div
+                    class="lecture-list"
+                    th:unless="${#lists.isEmpty(morningLectures)}">
+                <div
+                        class="lecture-row"
+                        th:each="lecture : ${morningLectures}">
+                    <span th:text="${lecture.name}">강의명</span>
+                    <strong th:text="${lecture.participantCount + ' / ' + lecture.maxCapacity}">0 / 0</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="lecture-column">
+            <h2>
+                오후 특강
+            </h2>
+            <div
+                    th:if="${#lists.isEmpty(afternoonLectures)}"
+                    class="empty-list">
+                등록된 오후 특강이 없습니다.
+            </div>
+            <div
+                    class="lecture-list"
+                    th:unless="${#lists.isEmpty(afternoonLectures)}">
+                <div
+                        class="lecture-row"
+                        th:each="lecture : ${afternoonLectures}">
+                    <span th:text="${lecture.name}">강의명</span>
+                    <strong th:text="${lecture.participantCount + ' / ' + lecture.maxCapacity}">0 / 0</strong>
+                </div>
+            </div>
+        </div>
     </section>
 
     <!-- 참가자 검색 -->
@@ -96,7 +154,7 @@
 
     <section class="menu-grid">
 
-        <a href="/admin/recruitments/1/participants"
+        <a th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id})}"
            class="menu-card">
 
             <div class="menu-title">
@@ -109,7 +167,7 @@
 
         </a>
 
-        <a href="/admin/recruitments/1/lectures"
+        <a th:href="@{/admin/recruitments/{recruitmentId}/lectures(recruitmentId=${recruitment.id})}"
            class="menu-card">
 
             <div class="menu-title">
@@ -122,7 +180,7 @@
 
         </a>
 
-        <a href="/admin/recruitments/1/assignment"
+        <a th:href="@{/admin/recruitments/{recruitmentId}/assignment(recruitmentId=${recruitment.id})}"
            class="menu-card">
 
             <div class="menu-title">
@@ -135,7 +193,7 @@
 
         </a>
 
-        <a href="/admin/recruitments/1/settings"
+        <a th:href="@{/admin/recruitments/{recruitmentId}/settings(recruitmentId=${recruitment.id})}"
            class="menu-card">
 
             <div class="menu-title">
@@ -166,7 +224,7 @@
 
         </div>
 
-        <a href="/admin/recruitments/1/excel"
+        <a th:href="@{/admin/recruitments/{recruitmentId}/excel(recruitmentId=${recruitment.id})}"
            class="download-btn">
 
             엑셀 다운로드
@@ -176,6 +234,9 @@
     </section>
 
 </div>
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
+<div th:replace="~{fragments/footer :: adminLoginModal}"></div>
+<script th:replace="~{fragments/footer :: siteFooterScript}"></script>
 
 </body>
 </html>

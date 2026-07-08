@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<footer th:fragment="siteFooter" class="site-footer">
+    <button
+            type="button"
+            class="site-footer-trigger"
+            aria-label="사이트 정보">
+        <span class="site-footer-brand">
+            WEMISSION.COM
+        </span>
+        <span data-admin-entry>
+            문의: 010-7528-9595
+        </span>
+        <span>
+            © 2026 WEMISSION. All rights reserved.
+        </span>
+    </button>
+</footer>
+<div
+        th:fragment="adminLoginModal"
+        id="adminLoginModal"
+        class="admin-login-modal"
+        aria-hidden="true">
+    <div class="admin-login-modal-backdrop"></div>
+    <div
+            class="admin-login-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="adminLoginModalTitle">
+        <div class="admin-login-header">
+            <h2 id="adminLoginModalTitle">
+                관리자 로그인
+            </h2>
+            <button
+                    type="button"
+                    class="admin-login-close"
+                    aria-label="닫기"
+                    data-admin-modal-close>
+                ×
+            </button>
+        </div>
+
+        <form
+                class="admin-login-form"
+                method="post"
+                action="/admin/login"
+                data-admin-login-form>
+            <div
+                    class="admin-login-error"
+                    data-admin-login-error
+                    hidden>
+                아이디 또는 비밀번호가 올바르지 않습니다.
+            </div>
+
+            <label>
+                <span>아이디</span>
+                <input
+                        type="text"
+                        name="name"
+                        autocomplete="username"
+                        placeholder="아이디를 입력하세요">
+            </label>
+
+            <label>
+                <span>비밀번호</span>
+                <input
+                        type="password"
+                        name="password"
+                        autocomplete="current-password"
+                        placeholder="비밀번호를 입력하세요">
+            </label>
+
+            <button type="submit">
+                로그인
+            </button>
+        </form>
+    </div>
+</div>
+<script th:fragment="siteFooterScript" th:src="@{/js/footer.js(v=2)}"></script>
+</body>
+</html>

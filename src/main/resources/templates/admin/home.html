@@ -1,129 +1,195 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1">
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1">
 
     <title>진로특강 관리자</title>
 
-    <link rel="stylesheet"
-          th:href="@{/css/admin/home.css}">
-
+    <link
+            rel="stylesheet"
+            th:href="@{/css/admin/home.css}">
+    <link
+            rel="stylesheet"
+            th:href="@{/css/footer.css}">
 </head>
 
 <body>
 
 <div class="page-container">
-
     <header class="page-header">
-
         <div>
-
-            <h1 class="page-title">
-                진로특강 관리자
-            </h1>
-
-            <p class="page-subtitle">
-                관리할 모집을 선택하세요.
+            <p class="page-eyebrow">
+                관리자 대시보드
             </p>
-
+            <h1 class="page-title">
+                진로특강 관리
+            </h1>
+            <p
+                    class="page-subtitle"
+                    th:text="${adminName + '님, 모집 현황을 확인하세요.'}">
+                관리자님, 모집 현황을 확인하세요.
+            </p>
         </div>
 
-        <a href="/admin/login"
-           class="logout-btn">
-
-            로그아웃
-
-        </a>
-
+        <form
+                method="post"
+                action="/admin/logout">
+            <button
+                    type="submit"
+                    class="logout-btn">
+                로그아웃
+            </button>
+        </form>
     </header>
 
-    <!-- 현재 모집 -->
-
-    <section class="section">
-
-        <h2 class="section-title">
-            현재 진행중 모집
-        </h2>
-
-        <a class="recruitment-card active"
-           href="/admin/recruitment-dashboard">
-
-            <div>
-
-                <div class="recruitment-title">
-                    2026 여름 진로캠프
-                </div>
-
-                <div class="recruitment-desc">
-
-                    모집중 · 신청자 327명
-
-                </div>
-
+    <section class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-label">
+                전체 모집
             </div>
-
-            <div class="badge active-badge">
-
-                진행중
-
+            <div
+                    class="summary-value"
+                    th:text="${totalRecruitmentCount}">
+                0
             </div>
-
-        </a>
-
-    </section>
-
-    <!-- 과거 모집 -->
-
-    <section class="section">
-
-        <h2 class="section-title">
-            지난 모집
-        </h2>
-
-        <div class="recruitment-list">
-
-            <a class="recruitment-card"
-               href="/admin/recruitment-dashboard">
-
-                <div>
-
-                    <div class="recruitment-title">
-                        2025 겨울 진로캠프
-                    </div>
-
-                    <div class="recruitment-desc">
-                        신청자 289명
-                    </div>
-
-                </div>
-
-            </a>
-
-            <a class="recruitment-card"
-               href="/admin/recruitment-dashboard">
-
-                <div>
-
-                    <div class="recruitment-title">
-                        2025 여름 진로캠프
-                    </div>
-
-                    <div class="recruitment-desc">
-                        신청자 302명
-                    </div>
-
-                </div>
-
-            </a>
-
         </div>
 
+        <div class="summary-card">
+            <div class="summary-label">
+                전체 신청자
+            </div>
+            <div
+                    class="summary-value"
+                    th:text="${totalParticipantCount}">
+                0
+            </div>
+        </div>
+
+        <div class="summary-card">
+            <div class="summary-label">
+                현재 상태
+            </div>
+            <div
+                    class="summary-value summary-status"
+                    th:text="${currentRecruitment != null ? '모집중' : '대기'}">
+                모집중
+            </div>
+        </div>
     </section>
 
+    <section class="section">
+        <div class="section-heading">
+            <h2 class="section-title">
+                현재 진행중 모집
+            </h2>
+        </div>
+
+        <div
+                th:if="${currentRecruitment == null}"
+                class="empty-state">
+            현재 진행중인 모집이 없습니다.
+        </div>
+
+        <a
+                th:if="${currentRecruitment != null}"
+                class="recruitment-card active"
+                th:href="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${currentRecruitment.id})}">
+            <div class="recruitment-main">
+                <div class="recruitment-title-row">
+                    <h3
+                            class="recruitment-title"
+                            th:text="${currentRecruitment.name}">
+                        2026 위미션 진로캠프
+                    </h3>
+                    <span class="status-badge">
+                        모집중
+                    </span>
+                </div>
+
+                <p
+                        class="recruitment-desc"
+                        th:text="${currentRecruitment.description}">
+                    모집 설명
+                </p>
+
+                <div class="recruitment-meta">
+                    <span>
+                        신청자
+                        <strong th:text="${participantCounts[currentRecruitment.id] ?: 0}">0</strong>명
+                    </span>
+                    <span>
+                        기간
+                        <strong th:text="${#temporals.format(currentRecruitment.startAt, 'yyyy.MM.dd')}">2026.07.01</strong>
+                        -
+                        <strong th:text="${#temporals.format(currentRecruitment.endAt, 'yyyy.MM.dd')}">2026.07.10</strong>
+                    </span>
+                </div>
+            </div>
+        </a>
+    </section>
+
+    <section class="section">
+        <div class="section-heading">
+            <h2 class="section-title">
+                지난 모집
+            </h2>
+        </div>
+
+        <div
+                th:if="${#lists.isEmpty(pastRecruitments)}"
+                class="empty-state">
+            지난 모집이 없습니다.
+        </div>
+
+        <div
+                th:unless="${#lists.isEmpty(pastRecruitments)}"
+                class="recruitment-list">
+            <a
+                    class="recruitment-card"
+                    th:href="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id})}"
+                    th:each="recruitment : ${pastRecruitments}">
+                <div class="recruitment-main">
+                    <div class="recruitment-title-row">
+                        <h3
+                                class="recruitment-title"
+                                th:text="${recruitment.name}">
+                            지난 모집
+                        </h3>
+                        <span class="status-badge status-badge-muted">
+                            종료
+                        </span>
+                    </div>
+
+                    <p
+                            class="recruitment-desc"
+                            th:text="${recruitment.description}">
+                        모집 설명
+                    </p>
+
+                    <div class="recruitment-meta">
+                        <span>
+                            신청자
+                            <strong th:text="${participantCounts[recruitment.id] ?: 0}">0</strong>명
+                        </span>
+                        <span>
+                            기간
+                            <strong th:text="${#temporals.format(recruitment.startAt, 'yyyy.MM.dd')}">2026.07.01</strong>
+                            -
+                            <strong th:text="${#temporals.format(recruitment.endAt, 'yyyy.MM.dd')}">2026.07.10</strong>
+                        </span>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </section>
 </div>
+
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
+<div th:replace="~{fragments/footer :: adminLoginModal}"></div>
+<script th:replace="~{fragments/footer :: siteFooterScript}"></script>
 
 </body>
 </html>

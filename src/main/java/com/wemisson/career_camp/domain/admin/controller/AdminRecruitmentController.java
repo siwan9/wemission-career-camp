@@ -645,8 +645,8 @@ public class AdminRecruitmentController {
 			.map(participantType -> RecruitmentParticipantTypeEntity.create(
 				recruitmentEntity,
 				participantType,
-				participantType.isStudent(),
-				true
+				false,
+				false
 			))
 			.forEach(recruitmentParticipantTypeRepository::save);
 

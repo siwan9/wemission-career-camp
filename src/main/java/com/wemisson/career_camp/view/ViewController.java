@@ -1,6 +1,7 @@
 package com.wemisson.career_camp.view;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -287,6 +288,7 @@ public class ViewController {
 
 		model.addAttribute("participantType", participantTypeRule.getParticipantTypeEntity().getType());
 		model.addAttribute("recruitment", recruitmentEntity);
+		addRecruitmentNoticeLines(model, recruitmentEntity);
 		model.addAttribute("canSelectMorningLecture", canSelectMorningLecture);
 		model.addAttribute("canSelectAfternoonLecture", canSelectAfternoonLecture);
 		model.addAttribute("adminReturnUrl", session.getAttribute(ADMIN_RETURN_URL_SESSION_KEY));
@@ -481,6 +483,7 @@ public class ViewController {
 		RecruitmentEntity recruitmentEntity = recruitmentService.findCurrentRecruitment().orElse(null);
 
 		model.addAttribute("recruitment", recruitmentEntity);
+		addRecruitmentNoticeLines(model, recruitmentEntity);
 		model.addAttribute("participantTypes", findSelectableParticipantTypes());
 		model.addAttribute("churches", findSelectableChurches(recruitmentEntity));
 	}
@@ -521,6 +524,32 @@ public class ViewController {
 		return recruitmentChurchRepository.findByRecruitmentEntityOrderBySortOrderAscIdAsc(recruitmentEntity);
 	}
 
+	private void addRecruitmentNoticeLines(Model model, RecruitmentEntity recruitmentEntity) {
+		if (recruitmentEntity == null) {
+			model.addAttribute("recruitmentNoticeLines", List.of("현재 신청 가능한 모집이 없습니다."));
+			return;
+		}
+
+		model.addAttribute(
+			"recruitmentNoticeLines",
+			Arrays.stream(normalizeNotice(recruitmentEntity.getNotice()).split("\n", -1))
+				.map(String::stripLeading)
+				.toList()
+		);
+	}
+
+	private String normalizeNotice(String notice) {
+		if (notice == null) {
+			return "";
+		}
+
+		return notice
+			.replace("\\r\\n", "\n")
+			.replace("\\n", "\n")
+			.replace("\r\n", "\n")
+			.replace("\r", "\n");
+	}
+
 	private RecruitmentChurchEntity findRecruitmentChurch(
 		Long churchId,
 		RecruitmentEntity recruitmentEntity
@@ -532,15 +561,12 @@ public class ViewController {
 	private void createParticipantTypeRules(RecruitmentEntity recruitmentEntity) {
 		participantTypeRepository.findAll()
 			.forEach(participantType -> {
-				boolean canSelectMorningLecture = participantType.isStudent();
-				boolean canSelectAfternoonLecture = true;
-
 				recruitmentParticipantTypeRepository.save(
 					RecruitmentParticipantTypeEntity.create(
 						recruitmentEntity,
 						participantType,
-						canSelectMorningLecture,
-						canSelectAfternoonLecture
+						false,
+						false
 					)
 				);
 			});

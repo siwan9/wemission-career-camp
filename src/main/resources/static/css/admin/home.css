@@ -120,28 +120,39 @@ body {
 }
 
 .admin-home-alert {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    z-index: 10002;
+    width: fit-content;
+    max-width: min(calc(100vw - 32px), 420px);
+    margin: 0;
     padding: 12px 14px;
-    margin-bottom: 16px;
     border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+    opacity: 1;
     font-weight: 800;
+    transform: translateX(-50%);
     transition: opacity .22s ease, transform .22s ease;
 }
 
 .admin-home-alert.is-hidden {
     opacity: 0;
-    transform: translateY(-8px);
+    transform: translate(-50%, -8px);
 }
 
 .admin-home-alert.success {
     border: 1px solid #b6d4fe;
     background: #e7f1ff;
     color: #0b5ed7;
+    box-shadow: 0 12px 28px rgba(13, 110, 253, .14);
 }
 
 .admin-home-alert.error {
     border: 1px solid #f1c6cb;
     background: #fff7f8;
     color: #b02a37;
+    box-shadow: 0 12px 28px rgba(176, 42, 55, .12);
 }
 
 .recruitment-create-section {
@@ -477,7 +488,7 @@ body {
     margin: 8px 0 0;
     color: #6c757d;
     line-height: 1.55;
-    white-space: pre-line;
+    white-space: pre-wrap;
 }
 
 .recruitment-meta {
@@ -520,7 +531,7 @@ body {
 
 @media (max-width: 768px) {
     .page-container {
-        padding: 22px 14px 16px;
+        padding: 22px 20px 16px;
     }
 
     .page-header {

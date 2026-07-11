@@ -54,7 +54,20 @@ body {
 
 .notice-content {
     margin-top: 6px;
-    white-space: pre-line;
+    margin-bottom: 0;
+    padding-left: 1.2rem;
+}
+
+.notice-content li + li {
+    margin-top: 4px;
+}
+
+.notice-content li {
+    min-height: 1.45em;
+}
+
+.notice-line-text {
+    white-space: pre-wrap;
 }
 
 .form-label {

@@ -48,11 +48,20 @@
             <!-- 신청 안내 -->
             <div class="alert alert-info">
                 <strong>신청 안내</strong><br>
-                <div
+                <ul
                         class="notice-content"
-                        th:text="${recruitment != null ? recruitment.notice : '현재 신청 가능한 모집이 없습니다.'}">
-                    신청 안내가 표시됩니다.
-                </div>
+                        th:if="${recruitmentNoticeLines != null}">
+                    <li
+                            th:each="noticeLine : ${recruitmentNoticeLines}">
+                        <span th:if="${#strings.isEmpty(#strings.trim(noticeLine))}">&nbsp;</span>
+                        <span
+                                class="notice-line-text"
+                                th:unless="${#strings.isEmpty(#strings.trim(noticeLine))}"
+                                th:text="${noticeLine}">
+                            신청 안내가 표시됩니다.
+                        </span>
+                    </li>
+                </ul>
             </div>
 
             <form id="registrationForm"

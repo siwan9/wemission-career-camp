@@ -12,5 +12,9 @@ public interface RecruitmentChurchRepository extends JpaRepository<RecruitmentCh
 
 	List<RecruitmentChurchEntity> findByRecruitmentEntityOrderByNameAsc(RecruitmentEntity recruitmentEntity);
 
+	List<RecruitmentChurchEntity> findByRecruitmentEntityOrderBySortOrderAscIdAsc(RecruitmentEntity recruitmentEntity);
+
 	Optional<RecruitmentChurchEntity> findByIdAndRecruitmentEntity(Long id, RecruitmentEntity recruitmentEntity);
+
+	void deleteByRecruitmentEntity(RecruitmentEntity recruitmentEntity);
 }

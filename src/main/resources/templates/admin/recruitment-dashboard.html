@@ -21,7 +21,7 @@
 
     <header class="page-header">
 
-        <div>
+        <div class="page-header-main">
 
             <a href="/admin/home"
                class="back-link">
@@ -36,47 +36,82 @@
                 2026 여름 진로캠프
             </h1>
 
-            <p
-                    class="page-subtitle"
-                    th:text="${recruitment.open ? '모집중' : '종료'}">
-                모집중
-            </p>
+            <form
+                    class="status-toggle-form"
+                    method="post"
+                    th:action="@{/admin/recruitments/{recruitmentId}/toggle-open(recruitmentId=${recruitment.id})}">
+                <button
+                        type="submit"
+                        class="page-subtitle status-toggle-button"
+                        th:classappend="${recruitment.open ? '' : ' page-subtitle-muted'}"
+                        th:text="${recruitment.open ? '모집중' : '종료'}"
+                        th:attr="aria-label=${recruitment.open ? '모집 종료로 변경' : '모집중으로 변경'}"
+                        onclick="return confirm('모집 상태를 변경할까요?')">
+                    모집중
+                </button>
+            </form>
 
         </div>
 
+        <button
+                type="button"
+                class="dashboard-refresh-button"
+                aria-label="신청자 현황 새로고침"
+                onclick="window.location.reload()">
+            <svg
+                    aria-hidden="true"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round">
+                <path d="M21 2v6h-6"/>
+                <path d="M3 12a9 9 0 0 1 15.55-6.36L21 8"/>
+                <path d="M3 22v-6h6"/>
+                <path d="M21 12a9 9 0 0 1-15.55 6.36L3 16"/>
+            </svg>
+        </button>
+
     </header>
+
+    <div
+            class="admin-toast"
+            th:if="${toastMessage != null}"
+            th:text="${toastMessage}">
+        처리되었습니다.
+    </div>
 
     <!-- 통계 -->
 
     <section class="stats-grid">
 
-        <div class="stat-card">
+        <a
+                class="stat-card"
+                th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='all')}">
             <div
                     class="stat-value"
                     th:text="${participantCount}">327</div>
             <div class="stat-label">신청자</div>
-        </div>
+        </a>
 
-        <div class="stat-card">
+        <a
+                class="stat-card"
+                th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='lecture',lectureType='AM')}">
             <div
                     class="stat-value"
                     th:text="${morningApplicationCount}">0</div>
             <div class="stat-label">오전 신청</div>
-        </div>
+        </a>
 
-        <div class="stat-card">
+        <a
+                class="stat-card"
+                th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='lecture',lectureType='PM')}">
             <div
                     class="stat-value"
                     th:text="${afternoonApplicationCount}">0</div>
             <div class="stat-label">오후 신청</div>
-        </div>
-
-        <div class="stat-card">
-            <div
-                    class="stat-value"
-                    th:text="${lectureCount}">0</div>
-            <div class="stat-label">강의 수</div>
-        </div>
+        </a>
 
     </section>
 
@@ -96,7 +131,14 @@
                 <div
                         class="lecture-row"
                         th:each="lecture : ${morningLectures}">
-                    <span th:text="${lecture.name}">강의명</span>
+                    <span>
+                        <span th:text="${lecture.speakerName + ' 강사'}">강사명</span>
+                        <em
+                                class="lecture-job-chip"
+                                th:text="${lecture.speakerJob}">
+                            직업
+                        </em>
+                    </span>
                     <strong th:text="${lecture.participantCount + ' / ' + lecture.maxCapacity}">0 / 0</strong>
                 </div>
             </div>
@@ -117,7 +159,14 @@
                 <div
                         class="lecture-row"
                         th:each="lecture : ${afternoonLectures}">
-                    <span th:text="${lecture.name}">강의명</span>
+                    <span>
+                        <span th:text="${lecture.speakerName + ' 강사'}">강사명</span>
+                        <em
+                                class="lecture-job-chip"
+                                th:text="${lecture.speakerJob}">
+                            직업
+                        </em>
+                    </span>
                     <strong th:text="${lecture.participantCount + ' / ' + lecture.maxCapacity}">0 / 0</strong>
                 </div>
             </div>
@@ -126,18 +175,24 @@
 
     <!-- 참가자 검색 -->
 
-    <section class="search-card">
+    <section class="search-card" data-quick-search-card>
 
         <h2>
             참가자 빠른 조회
         </h2>
 
-        <form>
+        <form
+                data-quick-search-form
+                method="get"
+                th:action="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id})}">
 
             <div class="search-wrapper">
 
                 <input
                         type="text"
+                        name="phoneNumber"
+                        inputmode="numeric"
+                        th:value="${phoneNumber}"
                         placeholder="휴대전화 번호 입력">
 
                 <button type="submit">
@@ -148,13 +203,87 @@
 
         </form>
 
+        <div
+                th:if="${phoneNumber != null and !#strings.isEmpty(phoneNumber) and #lists.isEmpty(quickResults)}"
+                class="empty-list quick-result-inline-empty">
+            일치하는 참가자가 없습니다.
+        </div>
+
+        <div
+                th:if="${phoneNumber != null and !#strings.isEmpty(phoneNumber)}"
+                th:unless="${#lists.isEmpty(quickResults)}"
+                class="quick-result-list quick-result-inline-list">
+            <div
+                    class="quick-result-row"
+                    th:each="participant : ${quickResults}">
+                <div>
+                    <div
+                            class="quick-result-name"
+                            th:text="${participant.name}">
+                        참가자명
+                    </div>
+                    <div class="quick-result-meta">
+                        <span th:text="${participant.participantTypeName}">학생</span>
+                        ·
+                        <span th:text="${participant.churchName}">교회명</span>
+                        ·
+                        <span th:text="${participant.phoneNumber}">01000000000</span>
+                    </div>
+                    <div class="quick-result-meta">
+                        오전:
+                        <strong th:text="${participant.morningLectureName}">미신청</strong>
+                        / 오후:
+                        <strong th:text="${participant.afternoonLectureName}">미신청</strong>
+                    </div>
+                </div>
+
+                <div class="quick-result-actions">
+                    <form
+                            method="post"
+                            th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/edit-info(recruitmentId=${recruitment.id},participantId=${participant.participantId})}">
+                        <input
+                                type="hidden"
+                                name="returnUrl"
+                                th:value="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id},phoneNumber=${phoneNumber})}">
+                        <button type="submit">
+                            인적사항 수정
+                        </button>
+                    </form>
+                    <form
+                            method="post"
+                            th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/edit-lecture(recruitmentId=${recruitment.id},participantId=${participant.participantId})}">
+                        <input
+                                type="hidden"
+                                name="returnUrl"
+                                th:value="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id},phoneNumber=${phoneNumber})}">
+                        <button type="submit">
+                            수강정보 수정
+                        </button>
+                    </form>
+                    <form
+                            method="post"
+                            th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/delete(recruitmentId=${recruitment.id},participantId=${participant.participantId})}">
+                        <input
+                                type="hidden"
+                                name="returnUrl"
+                                th:value="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id},phoneNumber=${phoneNumber})}">
+                        <button
+                                type="submit"
+                                class="danger"
+                                onclick="return confirm('참가자와 수강신청 정보를 삭제할까요?')">
+                            삭제
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
     </section>
 
     <!-- 관리 메뉴 -->
 
     <section class="menu-grid">
-
-        <a th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id})}"
+        <a th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='all')}"
            class="menu-card">
 
             <div class="menu-title">
@@ -167,32 +296,6 @@
 
         </a>
 
-        <a th:href="@{/admin/recruitments/{recruitmentId}/lectures(recruitmentId=${recruitment.id})}"
-           class="menu-card">
-
-            <div class="menu-title">
-                강의 관리
-            </div>
-
-            <div class="menu-desc">
-                강의 등록 및 수정
-            </div>
-
-        </a>
-
-        <a th:href="@{/admin/recruitments/{recruitmentId}/assignment(recruitmentId=${recruitment.id})}"
-           class="menu-card">
-
-            <div class="menu-title">
-                배정 관리
-            </div>
-
-            <div class="menu-desc">
-                자동 배정 및 결과 확인
-            </div>
-
-        </a>
-
         <a th:href="@{/admin/recruitments/{recruitmentId}/settings(recruitmentId=${recruitment.id})}"
            class="menu-card">
 
@@ -201,11 +304,10 @@
             </div>
 
             <div class="menu-desc">
-                모집 수정 및 마감
+                모집 세부, 강의, 교회 관리
             </div>
 
         </a>
-
     </section>
 
     <!-- 다운로드 -->
@@ -224,12 +326,22 @@
 
         </div>
 
-        <a th:href="@{/admin/recruitments/{recruitmentId}/excel(recruitmentId=${recruitment.id})}"
-           class="download-btn">
-
-            엑셀 다운로드
-
-        </a>
+        <form
+                class="download-form"
+                method="get"
+                th:action="@{/admin/recruitments/{recruitmentId}/excel(recruitmentId=${recruitment.id})}">
+            <select
+                    name="downloadType"
+                    aria-label="엑셀 다운로드 종류">
+                <option value="lecture">강좌별 현황</option>
+                <option value="church">교회별 현황</option>
+            </select>
+            <button
+                    type="submit"
+                    class="download-btn">
+                엑셀 다운로드
+            </button>
+        </form>
 
     </section>
 
@@ -237,6 +349,95 @@
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
 <div th:replace="~{fragments/footer :: adminLoginModal}"></div>
 <script th:replace="~{fragments/footer :: siteFooterScript}"></script>
+<script>
+    function initQuickSearch() {
+        const form = document.querySelector('[data-quick-search-form]');
+
+        if (!form) {
+            return;
+        }
+
+        form.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const submitButton = event.submitter || form.querySelector('button[type="submit"]');
+            const url = new URL(form.action, window.location.origin);
+            const formData = new FormData(form);
+
+            for (const [key, value] of formData.entries()) {
+                if (String(value).trim()) {
+                    url.searchParams.set(key, value);
+                } else {
+                    url.searchParams.delete(key);
+                }
+            }
+
+            if (submitButton) {
+                submitButton.disabled = true;
+            }
+
+            try {
+                const response = await fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('request failed');
+                }
+
+                const nextDocument = new DOMParser().parseFromString(await response.text(), 'text/html');
+                const nextSearchCard = nextDocument.querySelector('[data-quick-search-card]');
+                const currentSearchCard = document.querySelector('[data-quick-search-card]');
+
+                if (!nextSearchCard || !currentSearchCard) {
+                    window.location.href = url.toString();
+                    return;
+                }
+
+                currentSearchCard.replaceWith(nextSearchCard);
+                window.history.replaceState({}, '', url.toString());
+                initQuickSearch();
+            } catch (error) {
+                alert('검색 중 오류가 발생했습니다.');
+                if (submitButton) {
+                    submitButton.disabled = false;
+                }
+            }
+        });
+    }
+
+    function setupAdminToast() {
+        const adminToast = document.querySelector('.admin-toast');
+
+        if (!adminToast) {
+            return;
+        }
+
+        window.setTimeout(function () {
+            adminToast.classList.add('is-hidden');
+        }, 2200);
+        window.setTimeout(function () {
+            adminToast.remove();
+        }, 2800);
+    }
+
+    function setupDashboardAlerts() {
+        document.querySelectorAll('.dashboard-alert').forEach(function (alert) {
+            window.setTimeout(function () {
+                alert.classList.add('is-hidden');
+            }, 2400);
+            window.setTimeout(function () {
+                alert.remove();
+            }, 3000);
+        });
+    }
+
+    initQuickSearch();
+    setupAdminToast();
+    setupDashboardAlerts();
+</script>
 
 </body>
 </html>

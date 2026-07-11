@@ -86,19 +86,31 @@
 
                     <div
                         class="card lectureEntity-card h-100"
-                        th:classappend="${selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id ? ' lectureEntity-card-selected' : ''}"
-                        th:attr="data-lecture-id=${lectureEntity.id},data-lecture-type='AM',data-remaining-capacity=${lectureEntity.remainingCapacity},data-full=${lectureEntity.full}">
+                        th:classappend="${(selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id ? ' lectureEntity-card-selected' : '') + (!lectureEntity.open ? ' lectureEntity-card-pending' : '')}"
+                        th:attr="data-lecture-id=${lectureEntity.id},data-lecture-type='AM',data-remaining-capacity=${lectureEntity.remainingCapacity},data-full=${lectureEntity.full},data-open=${lectureEntity.open}">
                         <div class="card-body">
                             <div
                                 class="selected-lectureEntity-badge mb-3"
                                 th:classappend="${selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id ? '' : ' d-none'}">
                                 선택한 특강
                             </div>
+                            <div
+                                class="pending-lectureEntity-badge mb-3"
+                                th:classappend="${lectureEntity.open ? ' d-none' : ''}">
+                                준비중
+                            </div>
 
-                            <h5
-                                class="card-title"
-                                th:text="${lectureEntity.name}">
-                            </h5>
+                            <div class="lecture-speaker-line">
+                                <h5
+                                    class="card-title"
+                                    th:text="${lectureEntity.speakerName + ' 강사'}">
+                                </h5>
+                                <span
+                                    class="lecture-job-badge"
+                                    th:text="${lectureEntity.speakerJob}">
+                                    직업
+                                </span>
+                            </div>
                             <p
                                 class="card-text"
 
@@ -107,7 +119,7 @@
                             <span
                                 class="badge bg-secondary"
 
-                                th:text="${'남은 자리 ' + lectureEntity.remainingCapacity + '명'}">
+                                th:text="${'남은 자리 ' + (lectureEntity.open ? lectureEntity.remainingCapacity : 0) + '명'}">
                             </span>
 
                             <div
@@ -138,11 +150,11 @@
                                         th:value="${lectureEntity.id}">
                                     <button
                                         class="btn lectureEntity-btn lectureEntity-btn-apply w-100"
-                                        th:classappend="${selectedMorningLectureId != null ? ' lectureEntity-btn-muted' : ''}"
-                                        th:disabled="${lectureEntity.full or selectedMorningLectureId != null}"
+                                        th:classappend="${selectedMorningLectureId != null or !lectureEntity.open ? ' lectureEntity-btn-muted' : ''}"
+                                        th:disabled="${!lectureEntity.open or lectureEntity.full or selectedMorningLectureId != null}"
                                         th:text="${selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id
                                             ? '선택한 특강'
-                                            : (selectedMorningLectureId != null ? '이미 선택한 시간대입니다' : (lectureEntity.full ? '마감' : '신청하기'))}">
+                                            : (!lectureEntity.open ? '준비중' : (selectedMorningLectureId != null ? '이미 선택한 시간대입니다' : (lectureEntity.full ? '마감' : '신청하기')))}">
                                         신청하기
                                     </button>
                                 </form>
@@ -175,19 +187,31 @@
                 th:each="lectureEntity : ${afternoonLectures}">
                 <div
                     class="card lectureEntity-card h-100"
-                    th:classappend="${selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id ? ' lectureEntity-card-selected' : ''}"
-                    th:attr="data-lecture-id=${lectureEntity.id},data-lecture-type='PM',data-remaining-capacity=${lectureEntity.remainingCapacity},data-full=${lectureEntity.full}">
+                    th:classappend="${(selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id ? ' lectureEntity-card-selected' : '') + (!lectureEntity.open ? ' lectureEntity-card-pending' : '')}"
+                    th:attr="data-lecture-id=${lectureEntity.id},data-lecture-type='PM',data-remaining-capacity=${lectureEntity.remainingCapacity},data-full=${lectureEntity.full},data-open=${lectureEntity.open}">
                     <div class="card-body">
                         <div
                             class="selected-lectureEntity-badge mb-3"
                             th:classappend="${selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id ? '' : ' d-none'}">
                             선택한 특강
                         </div>
+                        <div
+                            class="pending-lectureEntity-badge mb-3"
+                            th:classappend="${lectureEntity.open ? ' d-none' : ''}">
+                            준비중
+                        </div>
 
-                        <h5
-                            class="card-title"
-                            th:text="${lectureEntity.name}">
-                        </h5>
+                        <div class="lecture-speaker-line">
+                            <h5
+                                class="card-title"
+                                th:text="${lectureEntity.speakerName + ' 강사'}">
+                            </h5>
+                            <span
+                                class="lecture-job-badge"
+                                th:text="${lectureEntity.speakerJob}">
+                                직업
+                            </span>
+                        </div>
                         <p
                             class="card-text"
 
@@ -196,7 +220,7 @@
                         <span
                             class="badge bg-secondary"
 
-                            th:text="${'남은 자리 ' + lectureEntity.remainingCapacity + '명'}">
+                            th:text="${'남은 자리 ' + (lectureEntity.open ? lectureEntity.remainingCapacity : 0) + '명'}">
                         </span>
 
                         <div
@@ -227,11 +251,11 @@
                                     th:value="${lectureEntity.id}">
                                 <button
                                     class="btn lectureEntity-btn lectureEntity-btn-apply w-100"
-                                    th:classappend="${selectedAfternoonLectureId != null ? ' lectureEntity-btn-muted' : ''}"
-                                    th:disabled="${lectureEntity.full or selectedAfternoonLectureId != null}"
+                                    th:classappend="${selectedAfternoonLectureId != null or !lectureEntity.open ? ' lectureEntity-btn-muted' : ''}"
+                                    th:disabled="${!lectureEntity.open or lectureEntity.full or selectedAfternoonLectureId != null}"
                                     th:text="${selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id
                                         ? '선택한 특강'
-                                        : (selectedAfternoonLectureId != null ? '이미 선택한 시간대입니다' : (lectureEntity.full ? '마감' : '신청하기'))}">
+                                        : (!lectureEntity.open ? '준비중' : (selectedAfternoonLectureId != null ? '이미 선택한 시간대입니다' : (lectureEntity.full ? '마감' : '신청하기')))}">
                                     신청하기
                                 </button>
                             </form>
@@ -243,9 +267,17 @@
 
         <div class="mt-4">
             <a
+                th:if="${editLectureMode != true}"
                 href="/home"
                 class="btn home-link-button w-100">
                 홈으로 가기
+            </a>
+            <a
+                th:if="${editLectureMode == true}"
+                th:href="${adminReturnUrl != null ? adminReturnUrl : '/lookup'}"
+                class="btn home-link-button w-100"
+                role="button">
+                뒤로가기
             </a>
         </div>
     </div>
@@ -262,6 +294,20 @@
         }
 
         event.preventDefault();
+
+        const card = form.closest('.lectureEntity-card');
+        const isCancelForm = form.getAttribute('action')?.endsWith('/lectures/cancel');
+        const isPendingLecture = card?.dataset.open === 'false';
+
+        if (isCancelForm && isPendingLecture) {
+            const confirmed = window.confirm(
+                '현재 신청이 불가능한 상태의 특강입니다.\n취소 후에는 다시 신청할 수 없을 수 있습니다.\n그래도 신청을 취소하시겠습니까?'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+        }
 
         const button = form.querySelector('button');
         if (button) {
@@ -317,7 +363,8 @@
             if (isTarget) {
                 card.dataset.remainingCapacity = String(result.remainingCapacity);
                 card.dataset.full = String(result.remainingCapacity <= 0);
-                remainingBadge.textContent = `남은 자리 ${result.remainingCapacity}명`;
+                const displayedRemainingCapacity = card.dataset.open === 'false' ? 0 : result.remainingCapacity;
+                remainingBadge.textContent = `남은 자리 ${displayedRemainingCapacity}명`;
             }
 
             actionArea.innerHTML = getActionHtml(card, result.selected);
@@ -328,6 +375,7 @@
         const lectureId = card.dataset.lectureId;
         const isSelectedCard = card.classList.contains('lectureEntity-card-selected');
         const isFull = card.dataset.full === 'true';
+        const isOpen = card.dataset.open === 'true';
 
         if (isSelectedCard) {
             return `
@@ -338,8 +386,8 @@
             `;
         }
 
-        const disabled = hasSelectedLecture || isFull;
-        const text = hasSelectedLecture ? '이미 선택한 시간대입니다' : (isFull ? '마감' : '신청하기');
+        const disabled = !isOpen || hasSelectedLecture || isFull;
+        const text = !isOpen ? '준비중' : (hasSelectedLecture ? '이미 선택한 시간대입니다' : (isFull ? '마감' : '신청하기'));
 
         return `
             <form action="/lectures/apply" method="post">

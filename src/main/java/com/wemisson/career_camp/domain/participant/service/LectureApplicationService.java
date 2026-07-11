@@ -14,7 +14,7 @@ import com.wemisson.career_camp.domain.participant.repository.ParticipantTypeRep
 import com.wemisson.career_camp.domain.recruitment.dto.LectureType;
 import com.wemisson.career_camp.domain.recruitment.entity.LectureEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentChurchEntity;
-import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantType;
+import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeEntity;
 import com.wemisson.career_camp.domain.recruitment.repository.LectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentChurchRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeRepository;
@@ -38,10 +38,20 @@ public class LectureApplicationService {
 		Long participantLectureId,
 		Long lectureId
 	) {
+		return apply(request, participantLectureId, lectureId, false);
+	}
+
+	@Transactional
+	public LectureApplicationResult apply(
+		ParticipantCreateRequest request,
+		Long participantLectureId,
+		Long lectureId,
+		boolean allowFull
+	) {
 		LectureEntity lectureEntity = lectureRepository.findById(lectureId)
 			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 특강입니다."));
 
-		validate(request, lectureEntity);
+		validate(request, lectureEntity, allowFull);
 
 		ParticipantLectureEntity participantLectureEntity = getOrCreateParticipantLecture(
 			request,
@@ -58,7 +68,11 @@ public class LectureApplicationService {
 			previousLectureEntity.decreaseParticipantCount();
 		}
 
-		lectureEntity.increaseParticipantCount();
+		if (allowFull) {
+			lectureEntity.forceIncreaseParticipantCount();
+		} else {
+			lectureEntity.increaseParticipantCount();
+		}
 		participantLectureEntity.apply(lectureEntity);
 
 		return toResult(participantLectureRepository.save(participantLectureEntity), lectureEntity);
@@ -110,17 +124,25 @@ public class LectureApplicationService {
 		return ParticipantLectureEntity.create(participantEntity);
 	}
 
-	private void validate(ParticipantCreateRequest request, LectureEntity lectureEntity) {
-		if (lectureEntity.isFull()) {
+	private void validate(ParticipantCreateRequest request, LectureEntity lectureEntity, boolean allowFull) {
+		if (!allowFull && !lectureEntity.isOpen()) {
+			throw new IllegalStateException("아직 신청 준비중인 특강입니다.");
+		}
+
+		if (!allowFull && lectureEntity.isFull()) {
 			throw new IllegalStateException("신청 가능한 자리가 없습니다.");
 		}
 
-		RecruitmentParticipantType rule = recruitmentParticipantTypeRepository
+		RecruitmentParticipantTypeEntity rule = recruitmentParticipantTypeRepository
 			.findByRecruitmentEntityAndParticipantTypeEntityId(
 				lectureEntity.getRecruitmentEntity(),
 				request.participantTypeId()
 			)
 			.orElseThrow(() -> new IllegalArgumentException("현재 모집에서 신청할 수 없는 참가자 유형입니다."));
+
+		if (!rule.canSelectMorningLecture() && !rule.canSelectAfternoonLecture()) {
+			throw new IllegalArgumentException("현재 모집에서 신청할 수 없는 참가자 유형입니다.");
+		}
 
 		if (!canSelect(rule, lectureEntity.getType())) {
 			throw new IllegalArgumentException("선택한 참가자 유형으로 신청할 수 없는 특강 시간대입니다.");
@@ -140,7 +162,7 @@ public class LectureApplicationService {
 			.orElseThrow(() -> new IllegalArgumentException("현재 모집에서 선택할 수 없는 교회입니다."));
 	}
 
-	private boolean canSelect(RecruitmentParticipantType rule, LectureType lectureType) {
+	private boolean canSelect(RecruitmentParticipantTypeEntity rule, LectureType lectureType) {
 		if (lectureType == LectureType.AM) {
 			return rule.canSelectMorningLecture();
 		}

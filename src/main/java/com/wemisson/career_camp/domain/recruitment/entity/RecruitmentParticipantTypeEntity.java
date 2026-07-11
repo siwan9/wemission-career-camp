@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 @Table(name = "recruitment_participant_types")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
-public class RecruitmentParticipantType {
+public class RecruitmentParticipantTypeEntity {
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
@@ -37,6 +37,29 @@ public class RecruitmentParticipantType {
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "participant_type_id", nullable = false)
 	private ParticipantTypeEntity participantTypeEntity;
+
+	public static RecruitmentParticipantTypeEntity create(
+		RecruitmentEntity recruitmentEntity,
+		ParticipantTypeEntity participantTypeEntity,
+		boolean canSelectMorningLecture,
+		boolean canSelectAfternoonLecture
+	) {
+		RecruitmentParticipantTypeEntity entity = new RecruitmentParticipantTypeEntity();
+		entity.recruitmentEntity = recruitmentEntity;
+		entity.participantTypeEntity = participantTypeEntity;
+		entity.canSelectMorningLecture = canSelectMorningLecture;
+		entity.canSelectAfternoonLecture = canSelectAfternoonLecture;
+
+		return entity;
+	}
+
+	public void updateLecturePermission(
+		boolean canSelectMorningLecture,
+		boolean canSelectAfternoonLecture
+	) {
+		this.canSelectMorningLecture = canSelectMorningLecture;
+		this.canSelectAfternoonLecture = canSelectAfternoonLecture;
+	}
 
 	public boolean canSelectMorningLecture() {
 		return Boolean.TRUE.equals(canSelectMorningLecture);

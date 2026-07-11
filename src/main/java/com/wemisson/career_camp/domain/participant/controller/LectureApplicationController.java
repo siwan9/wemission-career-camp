@@ -17,6 +17,8 @@ import com.wemisson.career_camp.domain.participant.service.LectureApplicationSer
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
+import static com.wemisson.career_camp.domain.admin.controller.AdminAuthController.ADMIN_ID_SESSION_KEY;
+
 @Controller
 @RequiredArgsConstructor
 public class LectureApplicationController {
@@ -44,7 +46,8 @@ public class LectureApplicationController {
 			LectureApplicationResult result = lectureApplicationService.apply(
 				request,
 				(Long)session.getAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY),
-				lectureId
+				lectureId,
+				isAdmin(session)
 			);
 
 			session.setAttribute(
@@ -78,7 +81,8 @@ public class LectureApplicationController {
 			LectureApplicationResult result = lectureApplicationService.apply(
 				request,
 				(Long)session.getAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY),
-				lectureId
+				lectureId,
+				isAdmin(session)
 			);
 
 			session.setAttribute(
@@ -144,5 +148,9 @@ public class LectureApplicationController {
 			"lectureType", result.lectureType().name(),
 			"remainingCapacity", result.remainingCapacity()
 		);
+	}
+
+	private boolean isAdmin(HttpSession session) {
+		return session.getAttribute(ADMIN_ID_SESSION_KEY) != null;
 	}
 }

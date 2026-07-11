@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1">
+    <title>모집 설정</title>
+    <link
+            rel="stylesheet"
+            th:href="@{/css/admin/recruitment-dashboard.css}">
+    <link
+            rel="stylesheet"
+            th:href="@{/css/footer.css}">
+</head>
+<body>
+<div class="page-container">
+    <header class="page-header">
+        <div>
+            <a
+                    th:href="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id})}"
+                    class="back-link">
+                ← 모집 대시보드
+            </a>
+            <h1 class="page-title">모집 설정</h1>
+            <p class="page-subtitle page-subtitle-text">
+                모집 세부, 강의, 교회 관리
+            </p>
+        </div>
+    </header>
+
+    <div
+            class="admin-toast"
+            th:if="${toastMessage != null}"
+            th:text="${toastMessage}">
+        저장되었습니다.
+    </div>
+
+    <section class="search-card">
+        <h2>모집 정보</h2>
+        <form
+                class="settings-form"
+                method="post"
+                th:action="@{/admin/recruitments/{recruitmentId}/settings(recruitmentId=${recruitment.id})}">
+            <label>
+                모집명
+                <input
+                        type="text"
+                        name="name"
+                        th:value="${recruitment.name}"
+                        required>
+            </label>
+            <label>
+                설명
+                <textarea
+                        name="description"
+                        rows="3"
+                        th:text="${recruitment.description}"
+                        required></textarea>
+            </label>
+            <label>
+                신청 안내
+                <textarea
+                        name="notice"
+                        rows="4"
+                        th:text="${recruitment.notice}"
+                        required></textarea>
+            </label>
+            <div class="settings-grid">
+                <label>
+                    시작일시
+                    <input
+                            type="datetime-local"
+                            name="startAt"
+                            th:value="${#temporals.format(recruitment.startAt, 'yyyy-MM-dd''T''HH:mm')}"
+                            required>
+                </label>
+                <label>
+                    종료일시
+                    <input
+                            type="datetime-local"
+                            name="endAt"
+                            th:value="${#temporals.format(recruitment.endAt, 'yyyy-MM-dd''T''HH:mm')}"
+                            required>
+                </label>
+            </div>
+            <label class="settings-check">
+                <input
+                        type="checkbox"
+                        name="isOpen"
+                        value="true"
+                        th:checked="${recruitment.open}">
+                모집중
+            </label>
+            <button type="submit">
+                모집 정보 저장
+            </button>
+        </form>
+    </section>
+
+    <section class="settings-panel">
+        <div class="settings-panel-header">
+            <h2>참가자 관리</h2>
+        </div>
+
+        <div
+                class="participant-type-rule-list"
+                th:unless="${#lists.isEmpty(participantTypeRules)}">
+            <article
+                    class="participant-type-rule-row"
+                    th:each="rule : ${participantTypeRules}">
+                <div class="participant-type-rule-title">
+                    <strong th:text="${rule.participantTypeEntity.type.name() == 'STUDENT' ? '학생' : '교사'}">
+                        학생
+                    </strong>
+                </div>
+                <form
+                        class="participant-type-rule-form"
+                        data-participant-type-rule-form
+                        method="post"
+                        th:action="@{/admin/recruitments/{recruitmentId}/participant-types/{ruleId}(recruitmentId=${recruitment.id},ruleId=${rule.id})}">
+                    <label class="settings-check">
+                        <input
+                                type="checkbox"
+                                name="canSelectMorningLecture"
+                                value="true"
+                                th:checked="${rule.canSelectMorningLecture}">
+                        오전 강의 선택
+                    </label>
+                    <label class="settings-check">
+                        <input
+                                type="checkbox"
+                                name="canSelectAfternoonLecture"
+                                value="true"
+                                th:checked="${rule.canSelectAfternoonLecture}">
+                        오후 강의 선택
+                    </label>
+                </form>
+            </article>
+        </div>
+    </section>
+
+    <section class="settings-panel">
+        <div class="settings-panel-header">
+            <h2>강의 관리</h2>
+        </div>
+
+        <form
+                class="settings-form compact"
+                method="post"
+                th:action="@{/admin/recruitments/{recruitmentId}/lectures(recruitmentId=${recruitment.id})}">
+            <div class="settings-grid">
+                <label>
+                    시간대
+                    <select name="type">
+                        <option value="AM">오전</option>
+                        <option value="PM">오후</option>
+                    </select>
+                </label>
+                <label>
+                    정원
+                    <input
+                            type="number"
+                            name="maxCapacity"
+                            min="0"
+                            step="1"
+                            value="0"
+                            required>
+                </label>
+            </div>
+            <label>
+                강사명
+                <input
+                        type="text"
+                        name="speakerName"
+                        placeholder="강사명을 입력하세요"
+                        required>
+            </label>
+            <label>
+                직업
+                <input
+                        type="text"
+                        name="speakerJob"
+                        placeholder="직업을 입력하세요"
+                        required>
+            </label>
+            <label>
+                설명
+                <textarea
+                        name="description"
+                        rows="2"
+                        placeholder="강의 설명을 입력하세요"
+                        required></textarea>
+            </label>
+            <label class="settings-check">
+                <input
+                        type="checkbox"
+                        name="isOpen"
+                        value="true"
+                        checked>
+                신청 가능
+            </label>
+            <button type="submit">
+                강의 추가
+            </button>
+        </form>
+
+        <div class="lecture-overview settings-overview">
+            <div class="lecture-column">
+                <h2>오전 강의</h2>
+                <div
+                        th:if="${#lists.isEmpty(lectures.?[type.name() == 'AM'])}"
+                        class="empty-list">
+                    등록된 오전 강의가 없습니다.
+                </div>
+                <div
+                        class="lecture-manage-list"
+                        data-lecture-sort-list
+                        th:unless="${#lists.isEmpty(lectures.?[type.name() == 'AM'])}"
+                        th:attr="data-lecture-reorder-url=@{/admin/recruitments/{recruitmentId}/lectures/reorder(recruitmentId=${recruitment.id})}">
+                    <div
+                            class="lecture-manage-row"
+                            data-lecture-row
+                            th:attr="data-lecture-id=${lecture.id}"
+                            th:each="lecture : ${lectures}"
+                            th:if="${lecture.type.name() == 'AM'}">
+                        <details class="lecture-manage-card">
+                            <summary>
+                                <span class="lecture-title">
+                                    <strong th:text="${lecture.speakerName + ' 강사'}">강사명</strong>
+                                    <em th:text="${lecture.speakerJob}">직업</em>
+                                </span>
+                                <strong th:text="${lecture.participantCount + ' / ' + lecture.maxCapacity}">0 / 0</strong>
+                                <span class="lecture-actions">
+                                    <button
+                                            type="button"
+                                            class="lecture-edit-icon"
+                                            aria-label="강의 수정">
+                                        <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                            <path d="M12 20h9"/>
+                                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </button>
+                                </span>
+                            </summary>
+                            <form
+                                    class="lecture-edit-form"
+                                    method="post"
+                                    th:action="@{/admin/recruitments/{recruitmentId}/lectures/{lectureId}(recruitmentId=${recruitment.id},lectureId=${lecture.id})}">
+                                <div class="settings-grid">
+                                    <label>
+                                        시간대
+                                        <select name="type">
+                                            <option value="AM" selected>오전</option>
+                                            <option value="PM">오후</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        정원
+                                        <input
+                                                type="number"
+                                                name="maxCapacity"
+                                                min="0"
+                                                step="1"
+                                                th:value="${lecture.maxCapacity}"
+                                                required>
+                                    </label>
+                                </div>
+                                <label>
+                                    강사명
+                                    <input
+                                            type="text"
+                                            name="speakerName"
+                                            th:value="${lecture.speakerName}"
+                                            required>
+                                </label>
+                                <label>
+                                    직업
+                                    <input
+                                            type="text"
+                                            name="speakerJob"
+                                            th:value="${lecture.speakerJob}"
+                                            required>
+                                </label>
+                                <label>
+                                    설명
+                                    <textarea
+                                            name="description"
+                                            rows="3"
+                                            th:text="${lecture.description}"
+                                            required></textarea>
+                                </label>
+                                <label class="settings-check">
+                                    <input
+                                            type="checkbox"
+                                            name="isOpen"
+                                            value="true"
+                                            th:checked="${lecture.open}">
+                                    신청 가능
+	                                </label>
+	                                <div class="lecture-edit-footer">
+	                                    <div class="lecture-edit-actions">
+	                                        <button type="submit">저장</button>
+                                        <button
+                                                type="submit"
+                                                class="lecture-delete-button"
+                                                th:formaction="@{/admin/recruitments/{recruitmentId}/lectures/{lectureId}/delete(recruitmentId=${recruitment.id},lectureId=${lecture.id})}"
+                                                onclick="return confirm('신청자가 없는 강의만 삭제할 수 있습니다. 삭제할까요?')">
+                                            삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </details>
+                        <button
+                                type="button"
+                                class="lecture-drag-handle"
+                                aria-label="강의 순서 변경">
+                            ≡
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lecture-column">
+                <h2>오후 강의</h2>
+                <div
+                        th:if="${#lists.isEmpty(lectures.?[type.name() == 'PM'])}"
+                        class="empty-list">
+                    등록된 오후 강의가 없습니다.
+                </div>
+                <div
+                        class="lecture-manage-list"
+                        data-lecture-sort-list
+                        th:unless="${#lists.isEmpty(lectures.?[type.name() == 'PM'])}"
+                        th:attr="data-lecture-reorder-url=@{/admin/recruitments/{recruitmentId}/lectures/reorder(recruitmentId=${recruitment.id})}">
+                    <div
+                            class="lecture-manage-row"
+                            data-lecture-row
+                            th:attr="data-lecture-id=${lecture.id}"
+                            th:each="lecture : ${lectures}"
+                            th:if="${lecture.type.name() == 'PM'}">
+                        <details class="lecture-manage-card">
+                            <summary>
+                                <span class="lecture-title">
+                                    <strong th:text="${lecture.speakerName + ' 강사'}">강사명</strong>
+                                    <em th:text="${lecture.speakerJob}">직업</em>
+                                </span>
+                                <strong th:text="${lecture.participantCount + ' / ' + lecture.maxCapacity}">0 / 0</strong>
+                                <span class="lecture-actions">
+                                    <button
+                                            type="button"
+                                            class="lecture-edit-icon"
+                                            aria-label="강의 수정">
+                                        <svg
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                width="18"
+                                                height="18"
+                                                viewBox="0 0 24 24"
+                                                fill="none"
+                                                stroke="currentColor"
+                                                stroke-width="2"
+                                                stroke-linecap="round"
+                                                stroke-linejoin="round">
+                                            <path d="M12 20h9"/>
+                                            <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                                        </svg>
+                                    </button>
+                                </span>
+                            </summary>
+                            <form
+                                    class="lecture-edit-form"
+                                    method="post"
+                                    th:action="@{/admin/recruitments/{recruitmentId}/lectures/{lectureId}(recruitmentId=${recruitment.id},lectureId=${lecture.id})}">
+                                <div class="settings-grid">
+                                    <label>
+                                        시간대
+                                        <select name="type">
+                                            <option value="AM">오전</option>
+                                            <option value="PM" selected>오후</option>
+                                        </select>
+                                    </label>
+                                    <label>
+                                        정원
+                                        <input
+                                                type="number"
+                                                name="maxCapacity"
+                                                min="0"
+                                                step="1"
+                                                th:value="${lecture.maxCapacity}"
+                                                required>
+                                    </label>
+                                </div>
+                                <label>
+                                    강사명
+                                    <input
+                                            type="text"
+                                            name="speakerName"
+                                            th:value="${lecture.speakerName}"
+                                            required>
+                                </label>
+                                <label>
+                                    직업
+                                    <input
+                                            type="text"
+                                            name="speakerJob"
+                                            th:value="${lecture.speakerJob}"
+                                            required>
+                                </label>
+                                <label>
+                                    설명
+                                    <textarea
+                                            name="description"
+                                            rows="3"
+                                            th:text="${lecture.description}"
+                                            required></textarea>
+                                </label>
+                                <label class="settings-check">
+                                    <input
+                                            type="checkbox"
+                                            name="isOpen"
+                                            value="true"
+                                            th:checked="${lecture.open}">
+                                    신청 가능
+	                                </label>
+	                                <div class="lecture-edit-footer">
+	                                    <div class="lecture-edit-actions">
+	                                        <button type="submit">저장</button>
+                                        <button
+                                                type="submit"
+                                                class="lecture-delete-button"
+                                                th:formaction="@{/admin/recruitments/{recruitmentId}/lectures/{lectureId}/delete(recruitmentId=${recruitment.id},lectureId=${lecture.id})}"
+                                                onclick="return confirm('신청자가 없는 강의만 삭제할 수 있습니다. 삭제할까요?')">
+                                            삭제
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </details>
+                        <button
+                                type="button"
+                                class="lecture-drag-handle"
+                                aria-label="강의 순서 변경">
+                            ≡
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="settings-panel">
+        <div class="settings-panel-header">
+            <h2>교회 관리</h2>
+        </div>
+
+        <form
+                class="settings-form compact"
+                method="post"
+                th:action="@{/admin/recruitments/{recruitmentId}/churches(recruitmentId=${recruitment.id})}">
+            <label>
+                교회명
+                <input
+                        type="text"
+                        name="name"
+                        placeholder="새 교회는 목록 마지막에 추가됩니다"
+                        required>
+            </label>
+            <button type="submit">
+                교회 추가
+            </button>
+        </form>
+
+        <div
+                th:if="${#lists.isEmpty(churches)}"
+                class="empty-list">
+            등록된 교회가 없습니다.
+        </div>
+        <div
+                class="church-manage-list"
+                data-church-sort-list
+                th:unless="${#lists.isEmpty(churches)}">
+            <div
+                    class="church-manage-row"
+                    data-church-row
+                    th:attr="data-church-id=${church.id}"
+                    th:each="church : ${churches}">
+                <details class="church-details">
+                    <summary>
+                        <span th:text="${church.name}">교회명</span>
+                        <button
+                                type="button"
+                                class="church-edit-icon"
+                                aria-label="교회 수정">
+                            <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="18"
+                                    height="18"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                <path d="M12 20h9"/>
+                                <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                            </svg>
+                        </button>
+                    </summary>
+                    <div class="church-edit-actions">
+                    <form
+                            class="church-edit-form"
+                            method="post"
+                            th:action="@{/admin/recruitments/{recruitmentId}/churches/{churchId}(recruitmentId=${recruitment.id},churchId=${church.id})}">
+                        <input
+                                type="hidden"
+                                name="sortOrder"
+                                th:value="${church.sortOrder}">
+                        <input
+                                type="text"
+                                name="name"
+                                th:value="${church.name}"
+                                aria-label="교회명"
+                                required>
+                        <button type="submit">
+                            저장
+                        </button>
+                    </form>
+                    <form
+                            method="post"
+                            th:action="@{/admin/recruitments/{recruitmentId}/churches/{churchId}/delete(recruitmentId=${recruitment.id},churchId=${church.id})}">
+                        <button
+                                type="submit"
+                                class="settings-danger-button compact church-delete-button"
+                                onclick="return confirm('신청자가 없는 교회만 삭제할 수 있습니다. 삭제할까요?')">
+                            삭제
+                        </button>
+                    </form>
+                    </div>
+                </details>
+                <button
+                        type="button"
+                        class="church-drag-handle"
+                        aria-label="교회 순서 변경">
+                    ≡
+                </button>
+            </div>
+        </div>
+        <div
+                th:unless="${#lists.isEmpty(churches)}"
+                th:attr="data-church-reorder-url=@{/admin/recruitments/{recruitmentId}/churches/reorder(recruitmentId=${recruitment.id})}">
+        </div>
+    </section>
+</div>
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
+<div th:replace="~{fragments/footer :: adminLoginModal}"></div>
+<script th:replace="~{fragments/footer :: siteFooterScript}"></script>
+<script>
+    let settingsAbortController = null;
+
+    function setupSortableList(config, signal) {
+        document.querySelectorAll(config.listSelector).forEach(function (list) {
+            let draggedRow = null;
+            let draggedGhost = null;
+            let dragStartTimer = null;
+            let dragPointerId = null;
+            let dragOffsetX = 0;
+            let dragOffsetY = 0;
+
+            function moveGhost(event) {
+                if (!draggedGhost) {
+                    return;
+                }
+
+                draggedGhost.style.transform = `translate(${event.clientX - dragOffsetX}px, ${event.clientY - dragOffsetY}px)`;
+            }
+
+            function startDrag(row, event) {
+                const rect = row.getBoundingClientRect();
+
+                draggedRow = row;
+                dragOffsetX = event.clientX - rect.left;
+                dragOffsetY = event.clientY - rect.top;
+                draggedGhost = row.cloneNode(true);
+
+                draggedGhost.classList.add(config.ghostClass);
+                draggedGhost.style.width = `${rect.width}px`;
+                draggedGhost.style.transform = `translate(${rect.left}px, ${rect.top}px)`;
+                document.body.appendChild(draggedGhost);
+                row.classList.add('is-dragging');
+            }
+
+            async function saveOrder() {
+                const reorderUrl = config.getUrl(list);
+
+                if (!reorderUrl) {
+                    return;
+                }
+
+                const body = new URLSearchParams();
+                list.querySelectorAll(config.rowSelector).forEach(function (row) {
+                    body.append(config.paramName, row.dataset[config.idKey]);
+                });
+
+                try {
+                    await fetch(reorderUrl, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body
+                    });
+                } catch (error) {
+                    alert(config.errorMessage);
+                }
+            }
+
+            function endDrag() {
+                window.clearTimeout(dragStartTimer);
+                const shouldSave = Boolean(draggedRow);
+
+                if (draggedRow) {
+                    draggedRow.classList.remove('is-dragging');
+                }
+
+                if (draggedGhost) {
+                    draggedGhost.remove();
+                }
+
+                draggedRow = null;
+                draggedGhost = null;
+                dragPointerId = null;
+
+                if (shouldSave) {
+                    saveOrder();
+                }
+            }
+
+            list.querySelectorAll(config.rowSelector).forEach(function (row) {
+                const handle = row.querySelector(config.handleSelector);
+
+                handle.addEventListener('pointerdown', function (event) {
+                    event.preventDefault();
+
+                    dragPointerId = event.pointerId;
+                    handle.setPointerCapture(event.pointerId);
+                    dragStartTimer = window.setTimeout(function () {
+                        startDrag(row, event);
+                    }, 220);
+                }, {signal});
+
+                handle.addEventListener('click', function (event) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }, {signal});
+            });
+
+            document.addEventListener('pointermove', function (event) {
+                if (event.pointerId !== dragPointerId || !draggedRow) {
+                    return;
+                }
+
+                event.preventDefault();
+                moveGhost(event);
+
+                const target = document
+                    .elementFromPoint(event.clientX, event.clientY)
+                    ?.closest(config.rowSelector);
+
+                if (!target || target === draggedRow || target.parentElement !== list) {
+                    return;
+                }
+
+                const targetRect = target.getBoundingClientRect();
+                const shouldPlaceAfter = event.clientY > targetRect.top + targetRect.height / 2;
+
+                list.insertBefore(
+                    draggedRow,
+                    shouldPlaceAfter ? target.nextSibling : target
+                );
+            }, {signal});
+
+            document.addEventListener('pointerup', function (event) {
+                if (event.pointerId === dragPointerId) {
+                    endDrag();
+                }
+            }, {signal});
+
+            document.addEventListener('pointercancel', function (event) {
+                if (event.pointerId === dragPointerId) {
+                    endDrag();
+                }
+            }, {signal});
+        });
+    }
+
+    function replaceSettingsContent(html) {
+        const nextDocument = new DOMParser().parseFromString(html, 'text/html');
+        const nextContainer = nextDocument.querySelector('.page-container');
+        const currentContainer = document.querySelector('.page-container');
+
+        if (!nextContainer || !currentContainer) {
+            window.location.reload();
+            return;
+        }
+
+        currentContainer.replaceWith(nextContainer);
+        initSettingsPage();
+    }
+
+    function setupAjaxForms(signal) {
+        document.querySelectorAll('.page-container form[method="post"]').forEach(function (form) {
+            form.addEventListener('submit', async function (event) {
+                event.preventDefault();
+
+                const submitter = event.submitter;
+                const action = submitter?.hasAttribute('formaction') ? submitter.formAction : form.action;
+                const formData = new FormData(form);
+
+                if (submitter) {
+                    submitter.disabled = true;
+                }
+
+                try {
+                    const response = await fetch(action, {
+                        method: 'POST',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: formData
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(await response.text() || 'request failed');
+                    }
+
+                    replaceSettingsContent(await response.text());
+                } catch (error) {
+                    alert('처리 중 오류가 발생했습니다. 입력값을 확인해주세요.');
+                    if (submitter) {
+                        submitter.disabled = false;
+                    }
+                }
+            }, {signal});
+        });
+    }
+
+    function setupParticipantTypeRuleToggles(signal) {
+        document.querySelectorAll('[data-participant-type-rule-form]').forEach(function (form) {
+            form.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+                checkbox.addEventListener('change', async function () {
+                    const formData = new FormData(form);
+
+                    checkbox.disabled = true;
+
+                    try {
+                        const response = await fetch(form.action, {
+                            method: 'POST',
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest'
+                            },
+                            body: formData
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(await response.text() || 'request failed');
+                        }
+
+                        replaceSettingsContent(await response.text());
+                    } catch (error) {
+                        alert('참가자 타입 설정 저장 중 오류가 발생했습니다.');
+                        checkbox.checked = !checkbox.checked;
+                        checkbox.disabled = false;
+                    }
+                }, {signal});
+            });
+        });
+    }
+
+    function setupEditToggles(signal) {
+        document.querySelectorAll('.lecture-manage-card summary, .church-details summary').forEach(function (summary) {
+            summary.addEventListener('click', function (event) {
+                event.preventDefault();
+            }, {signal});
+        });
+
+        document.querySelectorAll('.lecture-edit-icon, .church-edit-icon').forEach(function (button) {
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+
+                const details = button.closest('details');
+                if (details) {
+                    details.open = !details.open;
+                }
+            }, {signal});
+        });
+    }
+
+    function setupAdminToast() {
+        const adminToast = document.querySelector('.admin-toast');
+
+        if (!adminToast) {
+            return;
+        }
+
+        window.setTimeout(function () {
+            adminToast.classList.add('is-hidden');
+        }, 2200);
+        window.setTimeout(function () {
+            adminToast.remove();
+        }, 2800);
+    }
+
+    function initSettingsPage() {
+        if (settingsAbortController) {
+            settingsAbortController.abort();
+        }
+
+        settingsAbortController = new AbortController();
+        const signal = settingsAbortController.signal;
+
+        setupAjaxForms(signal);
+        setupParticipantTypeRuleToggles(signal);
+        setupEditToggles(signal);
+        setupSortableList({
+            listSelector: '[data-lecture-sort-list]',
+            rowSelector: '[data-lecture-row]',
+            handleSelector: '.lecture-drag-handle',
+            ghostClass: 'lecture-drag-ghost',
+            paramName: 'lectureIds',
+            idKey: 'lectureId',
+            getUrl: function (list) {
+                return list.dataset.lectureReorderUrl;
+            },
+            errorMessage: '강의 순서 저장 중 오류가 발생했습니다.'
+        }, signal);
+
+        setupSortableList({
+            listSelector: '[data-church-sort-list]',
+            rowSelector: '[data-church-row]',
+            handleSelector: '.church-drag-handle',
+            ghostClass: 'church-drag-ghost',
+            paramName: 'churchIds',
+            idKey: 'churchId',
+            getUrl: function () {
+                return document.querySelector('[data-church-reorder-url]')?.dataset.churchReorderUrl;
+            },
+            errorMessage: '교회 순서 저장 중 오류가 발생했습니다.'
+        }, signal);
+        setupAdminToast();
+    }
+
+    initSettingsPage();
+
+</script>
+</body>
+</html>

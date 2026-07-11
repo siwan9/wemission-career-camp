@@ -144,6 +144,48 @@
             margin-top: 16px;
         }
 
+        .closed-recruitment-notice {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            background: #f8f9fa;
+            color: #6c757d;
+            font-size: .92rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .lookup-action-button {
+            min-height: 46px;
+            border-radius: 10px;
+            font-weight: 700;
+        }
+
+        .lookup-action-button-secondary {
+            border: 1px solid #d7dee8;
+            background: #f8f9fb;
+            color: #495057;
+        }
+
+        .lookup-action-button-secondary:hover {
+            border-color: #c8d0dc;
+            background: #eef1f5;
+            color: #212529;
+        }
+
+        .lookup-action-button-primary {
+            border: 1px solid #0d6efd;
+            background: #0d6efd;
+            color: #ffffff;
+        }
+
+        .lookup-action-button-primary:hover {
+            border-color: #0b5ed7;
+            background: #0b5ed7;
+            color: #ffffff;
+        }
+
         .participant-name {
             font-weight: 700;
             margin-bottom: 4px;
@@ -326,7 +368,9 @@
                     <div th:text="${result.afternoonLectureName}">미신청</div>
                 </div>
 
-                <div class="result-actions">
+                <div
+                        class="result-actions"
+                        th:if="${result.recruitmentOpen}">
                     <form
                             method="post"
                             action="/lookup/edit-participant">
@@ -336,31 +380,38 @@
                                 th:value="${result.participantLectureId}">
                         <button
                                 type="submit"
-                                class="btn btn-outline-primary w-100">
+                                class="btn lookup-action-button lookup-action-button-secondary w-100">
                             인적사항 수정
                         </button>
                     </form>
 
                     <form
                             method="post"
-                            action="/lookup/edit-lectureEntity">
+                            action="/lookup/edit-lecture">
                         <input
                                 type="hidden"
                                 name="participantLectureId"
                                 th:value="${result.participantLectureId}">
                         <button
                                 type="submit"
-                                class="btn btn-primary w-100">
+                                class="btn lookup-action-button lookup-action-button-primary w-100">
                             수강신청 수정
                         </button>
                     </form>
+                </div>
+
+                <div
+                        class="closed-recruitment-notice"
+                        th:if="${!result.recruitmentOpen}">
+                    모집이 종료되어 신청 정보를 수정할 수 없습니다.
                 </div>
             </div>
         </div>
 
         <a
                 href="/home"
-                class="btn home-link-button w-100 mt-4">
+                class="btn home-link-button w-100 mt-4"
+                role="button">
             홈으로 가기
         </a>
 

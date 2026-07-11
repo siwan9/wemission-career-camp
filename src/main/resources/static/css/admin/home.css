@@ -66,7 +66,7 @@ body {
 
 .summary-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px;
     margin-bottom: 28px;
 }
@@ -103,7 +103,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 12px;
+    margin-bottom: 18px;
 }
 
 .section-title {
@@ -112,9 +112,295 @@ body {
     font-weight: 850;
 }
 
+.section-description {
+    margin: 6px 0 0;
+    color: #6c757d;
+    font-size: .92rem;
+    font-weight: 650;
+}
+
+.admin-home-alert {
+    padding: 12px 14px;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    font-weight: 800;
+    transition: opacity .22s ease, transform .22s ease;
+}
+
+.admin-home-alert.is-hidden {
+    opacity: 0;
+    transform: translateY(-8px);
+}
+
+.admin-home-alert.success {
+    border: 1px solid #b6d4fe;
+    background: #e7f1ff;
+    color: #0b5ed7;
+}
+
+.admin-home-alert.error {
+    border: 1px solid #f1c6cb;
+    background: #fff7f8;
+    color: #b02a37;
+}
+
+.recruitment-create-section {
+    padding: 22px;
+    border: 1px solid #e3e8ef;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, .05);
+}
+
+.recruitment-create-header {
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    margin-bottom: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.recruitment-create-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #495057;
+    cursor: pointer;
+    transition: color .15s ease, transform .15s ease;
+}
+
+.recruitment-create-header:hover .recruitment-create-toggle {
+    color: #212529;
+}
+
+.recruitment-create-toggle svg {
+    width: 18px;
+    height: 18px;
+    transition: transform .2s ease;
+}
+
+.recruitment-create-panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    opacity: 0;
+    margin-top: 0;
+    transition: grid-template-rows .24s ease, opacity .2s ease, margin-top .2s ease;
+}
+
+.recruitment-create-panel > * {
+    overflow: hidden;
+}
+
+.recruitment-create-section.is-open .recruitment-create-toggle svg {
+    transform: rotate(180deg);
+}
+
+.recruitment-create-section.is-open .recruitment-create-panel {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-top: 18px;
+}
+
+.recruitment-create-form {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.form-field {
+    display: grid;
+    gap: 7px;
+}
+
+.form-field label {
+    color: #495057;
+    font-size: .9rem;
+    font-weight: 800;
+}
+
+.form-field-wide {
+    grid-column: span 1;
+}
+
+.form-field-full {
+    grid-column: 1 / -1;
+}
+
+.recruitment-create-form input,
+.recruitment-create-form textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px 12px;
+    border: 1px solid #d7dee8;
+    border-radius: 10px;
+    background: #fbfcfe;
+    color: #212529;
+    font: inherit;
+    font-weight: 600;
+    transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+.recruitment-create-form input:not([type="checkbox"]):focus,
+.recruitment-create-form textarea:focus {
+    border-color: #86b7fe;
+    background: #ffffff;
+    box-shadow: 0 0 0 4px rgba(13, 110, 253, .12);
+    outline: 0;
+}
+
+.recruitment-create-form input[type="datetime-local"] {
+    color: #343a40;
+    letter-spacing: 0;
+}
+
+.recruitment-create-form input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: .62;
+}
+
+.recruitment-open-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 24px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #495057;
+    font-weight: 800;
+}
+
+.recruitment-open-check input {
+    width: 18px;
+    min-height: 18px;
+    accent-color: #0d6efd;
+}
+
+.recruitment-open-check:has(input:disabled) {
+    color: #868e96;
+}
+
+.recruitment-open-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.participant-type-rule-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.participant-type-rule-card {
+    padding: 10px 12px;
+    border: 1px solid #dbe2ea;
+    border-radius: 12px;
+    background: #fbfcfe;
+}
+
+.participant-type-rule-title {
+    margin-bottom: 1px;
+    color: #1f2937;
+    font-size: .95rem;
+    font-weight: 850;
+}
+
+.participant-type-rule-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 18px;
+    color: #495057;
+    font-size: .9rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.participant-type-rule-option + .participant-type-rule-option {
+    margin-top: 0;
+}
+
+.participant-type-rule-option input {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    accent-color: #0d6efd;
+}
+
+.participant-type-rule-option input:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.recruitment-create-actions {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding-top: 2px;
+}
+
+.recruitment-create-form button,
+.recruitment-delete-btn {
+    min-height: 46px;
+    border-radius: 10px;
+    font: inherit;
+    font-weight: 850;
+    cursor: pointer;
+}
+
+.recruitment-create-form button {
+    min-width: 140px;
+    padding: 0 18px;
+    border: 1px solid #0d6efd;
+    background: #0d6efd;
+    color: #ffffff;
+    box-shadow: 0 8px 18px rgba(13, 110, 253, .18);
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.recruitment-create-form button:hover {
+    border-color: #0b5ed7;
+    background: #0b5ed7;
+    box-shadow: 0 10px 22px rgba(13, 110, 253, .24);
+    transform: translateY(-1px);
+}
+
+.recruitment-create-note {
+    margin: 0;
+    padding: 7px 10px;
+    border: 1px solid #f1c6cb;
+    border-radius: 999px;
+    background: #fff7f8;
+    color: #b02a37;
+    font-size: .89rem;
+    font-weight: 800;
+    line-height: 1.25;
+    white-space: nowrap;
+}
+
 .recruitment-list {
     display: grid;
     gap: 12px;
+}
+
+.recruitment-manage-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 84px;
+    gap: 10px;
+    align-items: stretch;
 }
 
 .recruitment-card {
@@ -133,6 +419,39 @@ body {
     border-color: #cfe2ff;
     box-shadow: 0 10px 24px rgba(13, 110, 253, .1);
     transform: translateY(-1px);
+}
+
+.recruitment-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    padding: 0;
+    border: 1px solid #f1c6cb;
+    background: #fff7f8;
+    color: #b02a37;
+    box-shadow: none;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+
+.recruitment-delete-btn:hover {
+    border-color: #dc3545;
+    background: #f8d7da;
+    color: #9a1c28;
+}
+
+.recruitment-delete-btn svg {
+    width: 22px;
+    height: 22px;
+}
+
+.recruitment-delete-form {
+    display: flex;
+    align-items: stretch;
+    padding-top: 0;
 }
 
 .recruitment-card.active {
@@ -214,6 +533,40 @@ body {
 
     .summary-grid {
         grid-template-columns: 1fr;
+    }
+
+    .recruitment-create-form {
+        grid-template-columns: 1fr;
+    }
+
+    .form-field-wide,
+    .form-field-full {
+        grid-column: auto;
+    }
+
+    .recruitment-create-actions {
+        justify-content: flex-end;
+    }
+
+    .participant-type-rule-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .recruitment-create-form button {
+        width: auto;
+    }
+
+    .recruitment-manage-row {
+        grid-template-columns: 1fr;
+    }
+
+    .recruitment-delete-form {
+        justify-content: flex-end;
+        padding-top: 0;
+    }
+
+    .recruitment-delete-btn {
+        height: 44px;
     }
 
     .recruitment-title-row {

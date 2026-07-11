@@ -1,9 +1,11 @@
 package com.wemisson.career_camp.view;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -12,6 +14,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.wemisson.career_camp.domain.participant.entity.ParticipantEntity;
 import com.wemisson.career_camp.domain.participant.entity.ParticipantLectureEntity;
@@ -22,16 +25,18 @@ import com.wemisson.career_camp.domain.participant.repository.ParticipantTypeRep
 import com.wemisson.career_camp.domain.recruitment.service.RecruitmentService;
 import com.wemisson.career_camp.domain.recruitment.dto.LectureType;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentEntity;
-import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantType;
+import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeEntity;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeRepository;
 import com.wemisson.career_camp.domain.recruitment.service.LectureService;
 import com.wemisson.career_camp.domain.participant.dto.ParticipantCreateRequest;
+import com.wemisson.career_camp.domain.admin.controller.AdminRecruitmentController;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.LectureRepository;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentChurchEntity;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentChurchRepository;
 
 import static com.wemisson.career_camp.domain.admin.controller.AdminAuthController.ADMIN_NAME_SESSION_KEY;
+import static com.wemisson.career_camp.domain.admin.controller.AdminRecruitmentController.ADMIN_RETURN_URL_SESSION_KEY;
 
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -44,6 +49,10 @@ public class ViewController {
 	private static final String REGISTRATION_REQUEST_SESSION_KEY = "registrationRequest";
 	private static final String PARTICIPANT_LECTURE_ID_SESSION_KEY = "participantLectureId";
 	private static final String EDITING_PARTICIPANT_ID_SESSION_KEY = "editingParticipantId";
+	private static final String RETURN_TO_LOOKUP_AFTER_EDIT_SESSION_KEY = "returnToLookupAfterEdit";
+	private static final String LOOKUP_PARTICIPANT_LECTURE_IDS_SESSION_KEY = "lookupParticipantLectureIds";
+	private static final String LOOKUP_PHONE_NUMBER_SESSION_KEY = "lookupPhoneNumber";
+	private static final String LOOKUP_PASSWORD_SESSION_KEY = "lookupPassword";
 
 	private final RecruitmentService recruitmentService;
 	private final LectureService lectureService;
@@ -54,9 +63,14 @@ public class ViewController {
 	private final RecruitmentRepository recruitmentRepository;
 	private final LectureRepository lectureRepository;
 	private final RecruitmentChurchRepository recruitmentChurchRepository;
+	private final AdminRecruitmentController adminRecruitmentController;
 
 	@GetMapping("/home")
-	public String home(Model model) {
+	public String home(
+		Model model,
+		HttpSession session
+	) {
+		clearLookupSession(session);
 		RecruitmentEntity currentRecruitment = recruitmentService.findCurrentRecruitment()
 			.orElse(null);
 
@@ -64,6 +78,13 @@ public class ViewController {
 		model.addAttribute("recruitmentEntity", currentRecruitment);
 
 		return "home";
+	}
+
+	private void clearLookupSession(HttpSession session) {
+		session.removeAttribute(LOOKUP_PARTICIPANT_LECTURE_IDS_SESSION_KEY);
+		session.removeAttribute(LOOKUP_PHONE_NUMBER_SESSION_KEY);
+		session.removeAttribute(LOOKUP_PASSWORD_SESSION_KEY);
+		session.removeAttribute(RETURN_TO_LOOKUP_AFTER_EDIT_SESSION_KEY);
 	}
 
 	@GetMapping("/register")
@@ -98,13 +119,9 @@ public class ViewController {
 
 		model.addAttribute("request", toParticipantCreateRequest(participantEntity));
 		addRegisterAttributes(model, true);
+		model.addAttribute("adminReturnUrl", session.getAttribute(ADMIN_RETURN_URL_SESSION_KEY));
 
 		return "register";
-	}
-
-	@GetMapping("/lookup")
-	public String lookup() {
-		return "lookup";
 	}
 
 	@GetMapping("/lectures")
@@ -167,9 +184,48 @@ public class ViewController {
 		return "admin/home";
 	}
 
+	@PostMapping("/admin/recruitments")
+	public String createRecruitment(
+		@RequestParam String name,
+		@RequestParam String description,
+		@RequestParam String notice,
+		@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startAt,
+		@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endAt,
+		RedirectAttributes redirectAttributes
+	) {
+		RecruitmentEntity recruitmentEntity = recruitmentRepository.save(
+			RecruitmentEntity.create(name, description, notice, startAt, endAt, false)
+		);
+		createParticipantTypeRules(recruitmentEntity);
+		redirectAttributes.addFlashAttribute("successMessage", "모집이 추가되었습니다.");
+
+		return "redirect:/admin/home";
+	}
+
+	@PostMapping("/admin/recruitments/{recruitmentId}/delete")
+	@org.springframework.transaction.annotation.Transactional
+	public String deleteRecruitment(
+		@PathVariable Long recruitmentId,
+		RedirectAttributes redirectAttributes
+	) {
+		RecruitmentEntity recruitmentEntity = recruitmentRepository.findById(recruitmentId)
+			.orElseThrow(() -> new IllegalArgumentException("모집을 찾을 수 없습니다."));
+
+		participantLectureRepository.deleteByParticipantEntityRecruitmentEntity(recruitmentEntity);
+		participantRepository.deleteByRecruitmentEntity(recruitmentEntity);
+		lectureRepository.deleteByRecruitmentEntity(recruitmentEntity);
+		recruitmentChurchRepository.deleteByRecruitmentEntity(recruitmentEntity);
+		recruitmentParticipantTypeRepository.deleteByRecruitmentEntity(recruitmentEntity);
+		recruitmentRepository.delete(recruitmentEntity);
+		redirectAttributes.addFlashAttribute("successMessage", "모집이 삭제되었습니다.");
+
+		return "redirect:/admin/home";
+	}
+
 	@GetMapping("/admin/recruitment-dashboard/{recruitmentId}")
 	public String adminRecruitmentDashboard(
 		@PathVariable Long recruitmentId,
+		@RequestParam(required = false) String phoneNumber,
 		Model model,
 		HttpSession session
 	) {
@@ -187,6 +243,11 @@ public class ViewController {
 		model.addAttribute("lectureCount", lectureRepository.countByRecruitmentEntity(recruitmentEntity));
 		model.addAttribute("morningLectures", lectureService.findOpenLectures(recruitmentEntity, LectureType.AM));
 		model.addAttribute("afternoonLectures", lectureService.findOpenLectures(recruitmentEntity, LectureType.PM));
+		model.addAttribute("phoneNumber", phoneNumber);
+		model.addAttribute(
+			"quickResults",
+			adminRecruitmentController.searchParticipants(recruitmentEntity, phoneNumber)
+		);
 
 		return "admin/recruitment-dashboard";
 	}
@@ -210,7 +271,7 @@ public class ViewController {
 			return "redirect:/home";
 		}
 
-		RecruitmentParticipantType participantTypeRule = findParticipantTypeRule(
+		RecruitmentParticipantTypeEntity participantTypeRule = findParticipantTypeRule(
 			recruitmentEntity,
 			request.participantTypeId()
 		);
@@ -218,10 +279,17 @@ public class ViewController {
 		boolean canSelectMorningLecture = participantTypeRule.canSelectMorningLecture();
 		boolean canSelectAfternoonLecture = participantTypeRule.canSelectAfternoonLecture();
 
+		if (!canSelectMorningLecture && !canSelectAfternoonLecture) {
+			session.removeAttribute(REGISTRATION_REQUEST_SESSION_KEY);
+
+			return "redirect:/register";
+		}
+
 		model.addAttribute("participantType", participantTypeRule.getParticipantTypeEntity().getType());
 		model.addAttribute("recruitment", recruitmentEntity);
 		model.addAttribute("canSelectMorningLecture", canSelectMorningLecture);
 		model.addAttribute("canSelectAfternoonLecture", canSelectAfternoonLecture);
+		model.addAttribute("adminReturnUrl", session.getAttribute(ADMIN_RETURN_URL_SESSION_KEY));
 		model.addAttribute("morningLectures", canSelectMorningLecture
 			? lectureService.findOpenLectures(recruitmentEntity, LectureType.AM)
 			: List.of());
@@ -229,6 +297,10 @@ public class ViewController {
 			? lectureService.findOpenLectures(recruitmentEntity, LectureType.PM)
 			: List.of());
 		addAppliedLectureIds(session, model);
+		model.addAttribute(
+			"editLectureMode",
+			session.getAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY) != null
+		);
 
 		return "lecture";
 	}
@@ -326,6 +398,17 @@ public class ViewController {
 		session.removeAttribute(EDITING_PARTICIPANT_ID_SESSION_KEY);
 		session.setAttribute(REGISTRATION_REQUEST_SESSION_KEY, request);
 
+		String adminReturnUrl = (String)session.getAttribute(ADMIN_RETURN_URL_SESSION_KEY);
+		if (adminReturnUrl != null) {
+			session.removeAttribute(ADMIN_RETURN_URL_SESSION_KEY);
+			return "redirect:" + adminReturnUrl;
+		}
+
+		if (Boolean.TRUE.equals(session.getAttribute(RETURN_TO_LOOKUP_AFTER_EDIT_SESSION_KEY))) {
+			session.removeAttribute(RETURN_TO_LOOKUP_AFTER_EDIT_SESSION_KEY);
+			return "redirect:/lookup";
+		}
+
 		return "redirect:/lecture";
 	}
 
@@ -406,13 +489,17 @@ public class ViewController {
 		return recruitmentService.findCurrentRecruitment()
 			.map(recruitment -> recruitmentParticipantTypeRepository.findByRecruitmentEntityOrderByIdAsc(recruitment)
 				.stream()
-				.map(RecruitmentParticipantType::getParticipantTypeEntity)
+				.filter(recruitmentParticipantTypeEntity ->
+					recruitmentParticipantTypeEntity.canSelectMorningLecture()
+						|| recruitmentParticipantTypeEntity.canSelectAfternoonLecture()
+				)
+				.map(RecruitmentParticipantTypeEntity::getParticipantTypeEntity)
 				.toList())
 			.filter(participantTypes -> !participantTypes.isEmpty())
 			.orElseGet(participantTypeRepository::findAll);
 	}
 
-	private RecruitmentParticipantType findParticipantTypeRule(
+	private RecruitmentParticipantTypeEntity findParticipantTypeRule(
 		RecruitmentEntity recruitmentEntity,
 		Long participantTypeId
 	) {
@@ -431,7 +518,7 @@ public class ViewController {
 			return List.of();
 		}
 
-		return recruitmentChurchRepository.findByRecruitmentEntityOrderByNameAsc(recruitmentEntity);
+		return recruitmentChurchRepository.findByRecruitmentEntityOrderBySortOrderAscIdAsc(recruitmentEntity);
 	}
 
 	private RecruitmentChurchEntity findRecruitmentChurch(
@@ -440,5 +527,22 @@ public class ViewController {
 	) {
 		return recruitmentChurchRepository.findByIdAndRecruitmentEntity(churchId, recruitmentEntity)
 			.orElseThrow(() -> new IllegalArgumentException("현재 모집에서 선택할 수 없는 교회입니다."));
+	}
+
+	private void createParticipantTypeRules(RecruitmentEntity recruitmentEntity) {
+		participantTypeRepository.findAll()
+			.forEach(participantType -> {
+				boolean canSelectMorningLecture = participantType.isStudent();
+				boolean canSelectAfternoonLecture = true;
+
+				recruitmentParticipantTypeRepository.save(
+					RecruitmentParticipantTypeEntity.create(
+						recruitmentEntity,
+						participantType,
+						canSelectMorningLecture,
+						canSelectAfternoonLecture
+					)
+				);
+			});
 	}
 }

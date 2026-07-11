@@ -19,6 +19,15 @@ public class LectureService {
 
 	@Transactional(readOnly = true)
 	public List<LectureEntity> findOpenLectures(RecruitmentEntity recruitmentEntity, LectureType type) {
-		return lectureRepository.findOpenLectures(recruitmentEntity, type);
+		return lectureRepository.findByRecruitmentEntityAndTypeOrderBySortOrderAscIdAsc(recruitmentEntity, type)
+			.stream()
+			.sorted((first, second) -> {
+				if (first.isOpen() != second.isOpen()) {
+					return first.isOpen() ? -1 : 1;
+				}
+
+				return 0;
+			})
+			.toList();
 	}
 }

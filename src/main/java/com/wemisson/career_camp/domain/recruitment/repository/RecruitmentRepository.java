@@ -19,4 +19,8 @@ public interface RecruitmentRepository extends JpaRepository<RecruitmentEntity, 
 	List<RecruitmentEntity> findOpenRecruitments();
 
 	List<RecruitmentEntity> findAllByOrderByIdDesc();
+
+	boolean existsByIsOpenTrue();
+
+	boolean existsByIsOpenTrueAndIdNot(Long id);
 }

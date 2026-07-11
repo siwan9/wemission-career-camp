@@ -58,7 +58,8 @@
             <form id="registrationForm"
                   th:action="${editMode == true} ? @{/register/edit} : @{/lecture}"
                   method="post"
-                  th:object="${request}">
+                  th:object="${request}"
+                  th:attr="data-edit-mode=${editMode == true}">
                 <input
                         id="confirmAdditionalInput"
                         type="hidden"
@@ -95,15 +96,20 @@
                     </label>
 
                     <select
+                            id="participantTypeId"
                             class="form-select"
-                            th:field="*{participantTypeId}"
+                            name="participantTypeId"
                             required>
-                        <option value="" disabled>
+                        <option
+                                value=""
+                                disabled
+                                th:selected="${request.participantTypeId == null}">
                             신분을 선택해주세요
                         </option>
                         <option
                                 th:each="participantTypeEntity : ${participantTypes}"
                                 th:value="${participantTypeEntity.id}"
+                                th:selected="${request.participantTypeId != null and request.participantTypeId == participantTypeEntity.id}"
                                 th:text="${participantTypeEntity.type.name() == 'STUDENT' ? '학생' : '교사'}">
                             학생
                         </option>
@@ -165,12 +171,15 @@
                     <div class="password-field">
                         <input type="password"
                                class="form-control"
-                               th:field="*{password}"
+                               id="password"
+                               name="password"
+                               th:value="*{password}"
                                inputmode="numeric"
                                pattern="[0-9]{6}"
                                minlength="6"
                                maxlength="6"
-                               autocomplete="one-time-code"
+                               th:autocomplete="${editMode == true ? 'off' : 'one-time-code'}"
+                               th:attr="data-existing-password=${editMode == true ? request.password : ''}"
                                placeholder="숫자 6자리" required>
                         <button
                                 id="passwordToggleButton"
@@ -212,6 +221,11 @@
                             </svg>
                         </button>
                     </div>
+                    <div
+                            th:if="${editMode == true}"
+                            class="pin-edit-notice">
+                        조회용 비밀번호를 변경하면 해당 전화번호의 신청 내역 조회 시 새 비밀번호를 사용해야 합니다.
+                    </div>
                 </div>
 
                 <button
@@ -227,9 +241,17 @@
 
             <div class="mt-3">
                 <a
+                        th:if="${editMode != true}"
                         href="/home"
                         class="btn home-link-button w-100">
                     홈으로 가기
+                </a>
+                <a
+                        th:if="${editMode == true}"
+                        th:href="${adminReturnUrl != null ? adminReturnUrl : '/lookup'}"
+                        class="btn home-link-button w-100"
+                        role="button">
+                    뒤로가기
                 </a>
             </div>
 

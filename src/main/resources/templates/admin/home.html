@@ -59,17 +59,6 @@
 
         <div class="summary-card">
             <div class="summary-label">
-                전체 신청자
-            </div>
-            <div
-                    class="summary-value"
-                    th:text="${totalParticipantCount}">
-                0
-            </div>
-        </div>
-
-        <div class="summary-card">
-            <div class="summary-label">
                 현재 상태
             </div>
             <div
@@ -77,6 +66,121 @@
                     th:text="${currentRecruitment != null ? '모집중' : '대기'}">
                 모집중
             </div>
+        </div>
+    </section>
+
+    <div
+            th:if="${successMessage != null}"
+            class="admin-home-alert success"
+            th:text="${successMessage}">
+        처리되었습니다.
+    </div>
+    <div
+            th:if="${errorMessage != null}"
+            class="admin-home-alert error"
+            th:text="${errorMessage}">
+        오류가 발생했습니다.
+    </div>
+
+    <section
+            class="section recruitment-create-section"
+            data-recruitment-create
+            th:classappend="${errorMessage != null ? ' is-open' : ''}">
+        <button
+                type="button"
+                class="section-heading recruitment-create-header"
+                data-recruitment-create-toggle
+                aria-expanded="false"
+                aria-label="모집 추가 폼 열기">
+            <span>
+                <h2 class="section-title">
+                    모집 추가
+                </h2>
+                <p class="section-description">
+                    모집 기간과 안내 문구를 입력하면 신청 화면에 바로 반영됩니다.
+                </p>
+            </span>
+            <span class="recruitment-create-toggle" aria-hidden="true">
+                <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round">
+                    <path d="m6 9 6 6 6-6"/>
+                </svg>
+            </span>
+        </button>
+        <div class="recruitment-create-panel">
+            <form
+                    class="recruitment-create-form"
+                    method="post"
+                    action="/admin/recruitments">
+                <div class="form-field form-field-wide">
+                    <label for="recruitmentName">
+                        모집명
+                    </label>
+                    <input
+                            id="recruitmentName"
+                            type="text"
+                            name="name"
+                            placeholder="예: 2026 위미션 진로특강"
+                            required>
+                </div>
+
+                <div class="form-field">
+                    <label for="recruitmentStartAt">
+                        시작일시
+                    </label>
+                    <input
+                            id="recruitmentStartAt"
+                            type="datetime-local"
+                            name="startAt"
+                            required>
+                </div>
+
+                <div class="form-field">
+                    <label for="recruitmentEndAt">
+                        종료일시
+                    </label>
+                    <input
+                            id="recruitmentEndAt"
+                            type="datetime-local"
+                            name="endAt"
+                            required>
+                </div>
+
+                <div class="form-field form-field-full">
+                    <label for="recruitmentDescription">
+                        모집 설명
+                    </label>
+                    <textarea
+                            id="recruitmentDescription"
+                            name="description"
+                            rows="2"
+                            placeholder="홈 화면에 표시할 모집 설명"
+                            required></textarea>
+                </div>
+
+                <div class="form-field form-field-full">
+                    <label for="recruitmentNotice">
+                        신청 안내 문구
+                    </label>
+                    <textarea
+                            id="recruitmentNotice"
+                            name="notice"
+                            rows="3"
+                            placeholder="신청자가 기본정보 입력 및 특강 선택 전에 확인할 안내 문구"
+                            required></textarea>
+                </div>
+
+                <div class="recruitment-create-actions">
+                    <button type="submit">
+                        모집 추가
+                    </button>
+                </div>
+            </form>
         </div>
     </section>
 
@@ -93,42 +197,70 @@
             현재 진행중인 모집이 없습니다.
         </div>
 
-        <a
+        <div
                 th:if="${currentRecruitment != null}"
-                class="recruitment-card active"
-                th:href="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${currentRecruitment.id})}">
-            <div class="recruitment-main">
-                <div class="recruitment-title-row">
-                    <h3
-                            class="recruitment-title"
-                            th:text="${currentRecruitment.name}">
-                        2026 위미션 진로캠프
-                    </h3>
-                    <span class="status-badge">
-                        모집중
-                    </span>
-                </div>
+                class="recruitment-manage-row">
+            <a
+                    class="recruitment-card active"
+                    th:href="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${currentRecruitment.id})}">
+                <div class="recruitment-main">
+                    <div class="recruitment-title-row">
+                        <h3
+                                class="recruitment-title"
+                                th:text="${currentRecruitment.name}">
+                            2026 위미션 진로캠프
+                        </h3>
+                        <span class="status-badge">
+                            모집중
+                        </span>
+                    </div>
 
-                <p
-                        class="recruitment-desc"
-                        th:text="${currentRecruitment.description}">
-                    모집 설명
-                </p>
+                    <p
+                            class="recruitment-desc"
+                            th:text="${currentRecruitment.description}">
+                        모집 설명
+                    </p>
 
-                <div class="recruitment-meta">
-                    <span>
-                        신청자
-                        <strong th:text="${participantCounts[currentRecruitment.id] ?: 0}">0</strong>명
-                    </span>
-                    <span>
-                        기간
-                        <strong th:text="${#temporals.format(currentRecruitment.startAt, 'yyyy.MM.dd')}">2026.07.01</strong>
-                        -
-                        <strong th:text="${#temporals.format(currentRecruitment.endAt, 'yyyy.MM.dd')}">2026.07.10</strong>
-                    </span>
+                    <div class="recruitment-meta">
+                        <span>
+                            신청자
+                            <strong th:text="${participantCounts[currentRecruitment.id] ?: 0}">0</strong>명
+                        </span>
+                        <span>
+                            기간 :
+                            <strong th:text="${#temporals.format(currentRecruitment.startAt, 'yyyy.MM.dd HH:mm')}">2026.07.01 09:00</strong>
+                            -
+                            <strong th:text="${#temporals.format(currentRecruitment.endAt, 'yyyy.MM.dd HH:mm')}">2026.07.10 18:00</strong>
+                        </span>
+                    </div>
                 </div>
-            </div>
-        </a>
+            </a>
+            <form
+                    class="recruitment-delete-form"
+                    method="post"
+                    th:action="@{/admin/recruitments/{recruitmentId}/delete(recruitmentId=${currentRecruitment.id})}">
+                    <button
+                            type="submit"
+                            class="recruitment-delete-btn"
+                            aria-label="모집 삭제"
+                            onclick="return confirm('해당 모집과 참가자, 신청 내역이 모두 삭제됩니다. 계속할까요?')">
+                        <svg
+                                aria-hidden="true"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                stroke-width="2"
+                                stroke-linecap="round"
+                                stroke-linejoin="round">
+                            <path d="M3 6h18"/>
+                            <path d="M8 6V4h8v2"/>
+                            <path d="M19 6l-1 14H6L5 6"/>
+                            <path d="M10 11v5"/>
+                            <path d="M14 11v5"/>
+                        </svg>
+                    </button>
+                </form>
+        </div>
     </section>
 
     <section class="section">
@@ -147,48 +279,106 @@
         <div
                 th:unless="${#lists.isEmpty(pastRecruitments)}"
                 class="recruitment-list">
-            <a
-                    class="recruitment-card"
-                    th:href="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id})}"
+            <div
+                    class="recruitment-manage-row"
                     th:each="recruitment : ${pastRecruitments}">
-                <div class="recruitment-main">
-                    <div class="recruitment-title-row">
-                        <h3
-                                class="recruitment-title"
-                                th:text="${recruitment.name}">
-                            지난 모집
-                        </h3>
-                        <span class="status-badge status-badge-muted">
-                            종료
-                        </span>
-                    </div>
+                <a
+                        class="recruitment-card"
+                        th:href="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id})}">
+                    <div class="recruitment-main">
+                        <div class="recruitment-title-row">
+                            <h3
+                                    class="recruitment-title"
+                                    th:text="${recruitment.name}">
+                                지난 모집
+                            </h3>
+                            <span class="status-badge status-badge-muted">
+                                종료
+                            </span>
+                        </div>
 
-                    <p
-                            class="recruitment-desc"
-                            th:text="${recruitment.description}">
-                        모집 설명
-                    </p>
+                        <p
+                                class="recruitment-desc"
+                                th:text="${recruitment.description}">
+                            모집 설명
+                        </p>
 
-                    <div class="recruitment-meta">
-                        <span>
-                            신청자
-                            <strong th:text="${participantCounts[recruitment.id] ?: 0}">0</strong>명
-                        </span>
-                        <span>
-                            기간
-                            <strong th:text="${#temporals.format(recruitment.startAt, 'yyyy.MM.dd')}">2026.07.01</strong>
-                            -
-                            <strong th:text="${#temporals.format(recruitment.endAt, 'yyyy.MM.dd')}">2026.07.10</strong>
-                        </span>
+                        <div class="recruitment-meta">
+                            <span>
+                                신청자
+                                <strong th:text="${participantCounts[recruitment.id] ?: 0}">0</strong>명
+                            </span>
+                            <span>
+                                기간 :
+                                <strong th:text="${#temporals.format(recruitment.startAt, 'yyyy.MM.dd HH:mm')}">2026.07.01 09:00</strong>
+                                -
+                                <strong th:text="${#temporals.format(recruitment.endAt, 'yyyy.MM.dd HH:mm')}">2026.07.10 18:00</strong>
+                            </span>
+                        </div>
                     </div>
-                </div>
-            </a>
+                </a>
+                <form
+                        class="recruitment-delete-form"
+                        method="post"
+                        th:action="@{/admin/recruitments/{recruitmentId}/delete(recruitmentId=${recruitment.id})}">
+                        <button
+                                type="submit"
+                                class="recruitment-delete-btn"
+                                aria-label="모집 삭제"
+                                onclick="return confirm('해당 모집과 참가자, 신청 내역이 모두 삭제됩니다. 계속할까요?')">
+                            <svg
+                                    aria-hidden="true"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round">
+                                <path d="M3 6h18"/>
+                                <path d="M8 6V4h8v2"/>
+                                <path d="M19 6l-1 14H6L5 6"/>
+                                <path d="M10 11v5"/>
+                                <path d="M14 11v5"/>
+                            </svg>
+                        </button>
+                    </form>
+            </div>
         </div>
     </section>
 </div>
 
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
 <div th:replace="~{fragments/footer :: adminLoginModal}"></div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.admin-home-alert').forEach(function (alert) {
+            setTimeout(function () {
+                alert.classList.add('is-hidden');
+                setTimeout(function () {
+                    alert.remove();
+                }, 260);
+            }, 3200);
+        });
+
+        const recruitmentCreate = document.querySelector('[data-recruitment-create]');
+        const toggleButton = document.querySelector('[data-recruitment-create-toggle]');
+
+        if (recruitmentCreate && toggleButton) {
+            const syncExpanded = function () {
+                const expanded = recruitmentCreate.classList.contains('is-open');
+                toggleButton.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+                toggleButton.setAttribute('aria-label', expanded ? '모집 추가 폼 닫기' : '모집 추가 폼 열기');
+            };
+
+            syncExpanded();
+
+            toggleButton.addEventListener('click', function () {
+                recruitmentCreate.classList.toggle('is-open');
+                syncExpanded();
+            });
+        }
+    });
+</script>
 <script th:replace="~{fragments/footer :: siteFooterScript}"></script>
 
 </body>

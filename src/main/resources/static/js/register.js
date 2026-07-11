@@ -7,6 +7,7 @@ const passwordToggleButton = document.getElementById('passwordToggleButton');
 const duplicateApplicationModal = document.getElementById('duplicateApplicationModal');
 const submitButton = document.getElementById('submitButton');
 const churchCombobox = document.querySelector('[data-church-combobox]');
+const participantTypeSelect = document.getElementById('participantTypeId');
 const churchSearchInput = document.getElementById('churchSearchInput');
 const churchIdInput = document.getElementById('churchId');
 const churchOptions = document.getElementById('churchOptions');
@@ -17,6 +18,7 @@ const churchEmpty = churchOptions
     ? churchOptions.querySelector('.church-empty')
     : null;
 const storageKey = 'careerCampRegistrationForm';
+const isEditMode = form && form.dataset.editMode === 'true';
 
 const navigationEntry = performance.getEntriesByType('navigation')[0];
 const isFreshRegisterEntry =
@@ -28,6 +30,10 @@ if (isFreshRegisterEntry) {
 }
 
 function getSavedFormState() {
+    if (isEditMode) {
+        return null;
+    }
+
     const savedState = sessionStorage.getItem(storageKey);
 
     if (!savedState) {
@@ -38,7 +44,7 @@ function getSavedFormState() {
 }
 
 function saveFormState() {
-    if (!form) {
+    if (!form || isEditMode) {
         return;
     }
 
@@ -71,6 +77,17 @@ function restoreFormState() {
     });
 
     syncChurchSearchInput();
+    syncParticipantTypePlaceholder();
+}
+
+function syncParticipantTypePlaceholder() {
+    if (!participantTypeSelect) {
+        return;
+    }
+
+    if (!participantTypeSelect.value) {
+        participantTypeSelect.selectedIndex = 0;
+    }
 }
 
 function openChurchOptions() {
@@ -145,8 +162,13 @@ if (submitButton) {
 }
 
 window.addEventListener('pageshow', function () {
+    if (isEditMode && passwordInput && !passwordInput.value && passwordInput.dataset.existingPassword) {
+        passwordInput.value = passwordInput.dataset.existingPassword;
+    }
+
     restoreFormState();
     syncChurchSearchInput();
+    syncParticipantTypePlaceholder();
 
     if (confirmAdditionalInput) {
         confirmAdditionalInput.value = 'false';
@@ -221,6 +243,8 @@ if (churchSearchInput && churchIdInput && churchOptions) {
         }
     });
 }
+
+syncParticipantTypePlaceholder();
 
 if (passwordToggleButton && passwordInput) {
     passwordToggleButton.addEventListener('click', function () {

@@ -66,13 +66,27 @@
             <div
                     class="col-12"
                     th:each="lectureEntity : ${morningLectures}">
-                <div class="card lectureEntity-card h-100">
+                <div
+                        class="card lectureEntity-card h-100"
+                        th:classappend="${!lectureEntity.open ? ' lectureEntity-card-pending' : ''}">
                     <div class="card-body">
-                        <h5
-                                class="card-title"
-                                th:text="${lectureEntity.name}">
-                            강좌명
-                        </h5>
+                        <div
+                                class="pending-lectureEntity-badge mb-3"
+                                th:classappend="${lectureEntity.open ? ' d-none' : ''}">
+                            준비중
+                        </div>
+                        <div class="lecture-speaker-line">
+                            <h5
+                                    class="card-title"
+                                    th:text="${lectureEntity.speakerName + ' 강사'}">
+                                강사명
+                            </h5>
+                            <span
+                                    class="lecture-job-badge"
+                                    th:text="${lectureEntity.speakerJob}">
+                                직업
+                            </span>
+                        </div>
                         <p
                                 class="card-text"
                                 th:text="${lectureEntity.description}">
@@ -80,7 +94,7 @@
                         </p>
                         <span
                                 class="badge bg-secondary"
-                                th:text="${'남은 자리 ' + lectureEntity.remainingCapacity + '명'}">
+                                th:text="${'남은 자리 ' + (lectureEntity.open ? lectureEntity.remainingCapacity : 0) + '명'}">
                             남은 자리
                         </span>
                     </div>
@@ -109,13 +123,27 @@
             <div
                     class="col-12"
                     th:each="lectureEntity : ${afternoonLectures}">
-                <div class="card lectureEntity-card h-100">
+                <div
+                        class="card lectureEntity-card h-100"
+                        th:classappend="${!lectureEntity.open ? ' lectureEntity-card-pending' : ''}">
                     <div class="card-body">
-                        <h5
-                                class="card-title"
-                                th:text="${lectureEntity.name}">
-                            강좌명
-                        </h5>
+                        <div
+                                class="pending-lectureEntity-badge mb-3"
+                                th:classappend="${lectureEntity.open ? ' d-none' : ''}">
+                            준비중
+                        </div>
+                        <div class="lecture-speaker-line">
+                            <h5
+                                    class="card-title"
+                                    th:text="${lectureEntity.speakerName + ' 강사'}">
+                                강사명
+                            </h5>
+                            <span
+                                    class="lecture-job-badge"
+                                    th:text="${lectureEntity.speakerJob}">
+                                직업
+                            </span>
+                        </div>
                         <p
                                 class="card-text"
                                 th:text="${lectureEntity.description}">
@@ -123,7 +151,7 @@
                         </p>
                         <span
                                 class="badge bg-secondary"
-                                th:text="${'남은 자리 ' + lectureEntity.remainingCapacity + '명'}">
+                                th:text="${'남은 자리 ' + (lectureEntity.open ? lectureEntity.remainingCapacity : 0) + '명'}">
                             남은 자리
                         </span>
                     </div>

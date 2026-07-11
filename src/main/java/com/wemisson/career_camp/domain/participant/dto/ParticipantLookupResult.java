@@ -10,7 +10,8 @@ public record ParticipantLookupResult(
 	ParticipantType participantType,
 	String churchName,
 	String morningLectureName,
-	String afternoonLectureName
+	String afternoonLectureName,
+	boolean recruitmentOpen
 ) {
 
 	public static ParticipantLookupResult from(ParticipantLectureEntity participantLectureEntity) {
@@ -21,7 +22,8 @@ public record ParticipantLookupResult(
 			participantLectureEntity.getParticipantEntity().getType().getType(),
 			participantLectureEntity.getParticipantEntity().getRecruitmentChurchEntity().getName(),
 			getLectureName(participantLectureEntity.getMorningLectureEntity()),
-			getLectureName(participantLectureEntity.getAfternoonLectureEntity())
+			getLectureName(participantLectureEntity.getAfternoonLectureEntity()),
+			participantLectureEntity.getParticipantEntity().getRecruitmentEntity().isOpen()
 		);
 	}
 
@@ -30,6 +32,6 @@ public record ParticipantLookupResult(
 			return "미신청";
 		}
 
-		return lectureEntity.getName();
+		return lectureEntity.getSpeakerName();
 	}
 }

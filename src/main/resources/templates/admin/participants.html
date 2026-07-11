@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1">
+    <title>참가자 관리</title>
+    <link
+            rel="stylesheet"
+            th:href="@{/css/admin/recruitment-dashboard.css}">
+    <link
+            rel="stylesheet"
+            th:href="@{/css/footer.css}">
+</head>
+<body>
+<div class="page-container">
+    <header class="page-header">
+        <div>
+            <a
+                    th:href="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id})}"
+                    class="back-link">
+                ← 모집 대시보드
+            </a>
+            <h1
+                    class="page-title"
+                    th:text="'참가자 관리'">
+                참가자 관리
+            </h1>
+            <p class="page-subtitle page-subtitle-text">
+                신청 내역 조회 및 수정
+            </p>
+        </div>
+    </header>
+
+    <section class="participant-report">
+        <nav class="participant-tabs" aria-label="참가자 조회 방식">
+            <a
+                    th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='all')}"
+                    th:classappend="${reportType == 'all' ? ' is-active' : ''}">
+                전체 신청자
+            </a>
+            <a
+                    th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='lecture')}"
+                    th:classappend="${reportType == 'lecture' ? ' is-active' : ''}">
+                강좌별 신청자
+            </a>
+            <a
+                    th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='church')}"
+                    th:classappend="${reportType == 'church' ? ' is-active' : ''}">
+                교회별 신청자
+            </a>
+        </nav>
+
+        <div
+                class="participant-report-header"
+                th:if="${reportType == 'all'}">
+            <div>
+                <h2>전체 신청자</h2>
+                <p>참가 순서대로 전체 참가자 정보를 조회합니다.</p>
+            </div>
+        </div>
+        <div
+                class="participant-report-header"
+                th:if="${reportType == 'lecture'}">
+            <div>
+                <h2>강좌별 신청자</h2>
+                <p>강좌를 선택하면 해당 강좌 신청자만 조회합니다.</p>
+            </div>
+        </div>
+        <nav
+                class="participant-subtabs"
+                th:if="${reportType == 'lecture'}"
+                aria-label="강좌 시간대">
+            <a
+                    th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='lecture',lectureType='AM')}"
+                    th:classappend="${lectureType.name() == 'AM' ? ' is-active' : ''}">
+                오전 강좌
+            </a>
+            <a
+                    th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='lecture',lectureType='PM')}"
+                    th:classappend="${lectureType.name() == 'PM' ? ' is-active' : ''}">
+                오후 강좌
+            </a>
+        </nav>
+        <div
+                class="participant-report-header"
+                th:if="${reportType == 'church'}">
+            <div>
+                <h2>교회별 신청자</h2>
+                <p>교회를 선택하면 해당 교회 참가자만 조회합니다.</p>
+            </div>
+        </div>
+
+        <div
+                th:if="${reportType == 'lecture' and #lists.isEmpty(filteredLectures)}"
+                class="empty-list">
+            선택한 시간대에 등록된 강의가 없습니다.
+        </div>
+        <div
+                th:if="${reportType == 'church' and #lists.isEmpty(churches)}"
+                class="empty-list">
+            등록된 교회가 없습니다.
+        </div>
+
+        <div
+                th:if="${reportType == 'all'}">
+            <div
+                    th:if="${#lists.isEmpty(allParticipants)}"
+                    class="empty-list">
+                등록된 참가자가 없습니다.
+            </div>
+            <div
+                    class="participant-table-wrap"
+                    th:unless="${#lists.isEmpty(allParticipants)}">
+                <table class="participant-table">
+                    <thead>
+                    <tr>
+                        <th>번호</th>
+                        <th>이름</th>
+                        <th>구분</th>
+                        <th>교회</th>
+                        <th>전화번호</th>
+                        <th>오전 신청</th>
+                        <th>오후 신청</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <th:block
+                            th:each="participant, rowStat : ${allParticipants}"
+                            th:with="participantLecture=${churchParticipantLectures[participant.id]}">
+                        <tr
+                                class="participant-click-row"
+                                data-participant-action-toggle
+                                th:attr="data-target=${'all-action-' + participant.id}">
+                            <td th:text="${currentPage * pageSize + rowStat.count}">1</td>
+                            <td th:text="${participant.name}">홍길동</td>
+                            <td th:text="${participant.type.type.name() == 'STUDENT' ? '학생' : '교사'}">학생</td>
+                            <td th:text="${participant.recruitmentChurchEntity.name}">교회명</td>
+                            <td th:text="${participant.phoneNumber}">01000000000</td>
+                            <td>
+                                <span
+                                        th:if="${participantLecture != null and participantLecture.morningLectureEntity != null}"
+                                        class="table-lecture-cell">
+                                    <span th:text="${participantLecture.morningLectureEntity.speakerName + ' 강사'}">강사명</span>
+                                    <em th:text="${participantLecture.morningLectureEntity.speakerJob}">직업</em>
+                                </span>
+                                <span th:unless="${participantLecture != null and participantLecture.morningLectureEntity != null}">-</span>
+                            </td>
+                            <td>
+                                <span
+                                        th:if="${participantLecture != null and participantLecture.afternoonLectureEntity != null}"
+                                        class="table-lecture-cell">
+                                    <span th:text="${participantLecture.afternoonLectureEntity.speakerName + ' 강사'}">강사명</span>
+                                    <em th:text="${participantLecture.afternoonLectureEntity.speakerJob}">직업</em>
+                                </span>
+                                <span th:unless="${participantLecture != null and participantLecture.afternoonLectureEntity != null}">-</span>
+                            </td>
+                        </tr>
+                        <tr
+                                class="participant-action-row"
+                                th:id="${'all-action-' + participant.id}">
+                            <td colspan="7">
+                                <div class="participant-row-actions">
+                                    <form
+                                            method="post"
+                                            th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/edit-info(recruitmentId=${recruitment.id},participantId=${participant.id})}">
+                                        <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                        <button type="submit">인적사항 수정</button>
+                                    </form>
+                                    <form
+                                            method="post"
+                                            th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/edit-lecture(recruitmentId=${recruitment.id},participantId=${participant.id})}">
+                                        <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                        <button type="submit">수강정보 수정</button>
+                                    </form>
+                                    <form
+                                            method="post"
+                                            th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/delete(recruitmentId=${recruitment.id},participantId=${participant.id})}">
+                                        <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                        <button
+                                                type="submit"
+                                                class="danger"
+                                                onclick="return confirm('참가자와 신청 정보를 삭제할까요?')">
+                                            삭제
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </th:block>
+                    </tbody>
+                </table>
+            </div>
+            <div
+                    class="participant-pagination"
+                    th:if="${allParticipantPage != null and allParticipantPage.totalPages > 1}">
+                <a
+                        th:classappend="${allParticipantPage.first ? ' is-disabled' : ''}"
+                        th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='all',page=0,pageSize=${pageSize})}">
+                    처음
+                </a>
+                <a
+                        th:classappend="${allParticipantPage.first ? ' is-disabled' : ''}"
+                        th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='all',page=${currentPage > 0 ? currentPage - 1 : 0},pageSize=${pageSize})}">
+                    이전
+                </a>
+                <a
+                        th:each="pageNumber : ${pageNumbers}"
+                        th:classappend="${pageNumber == currentPage ? ' is-active' : ''}"
+                        th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='all',page=${pageNumber},pageSize=${pageSize})}"
+                        th:text="${pageNumber + 1}">
+                    1
+                </a>
+                <a
+                        th:classappend="${allParticipantPage.last ? ' is-disabled' : ''}"
+                        th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='all',page=${allParticipantPage.last ? currentPage : currentPage + 1},pageSize=${pageSize})}">
+                    다음
+                </a>
+                <a
+                        th:classappend="${allParticipantPage.last ? ' is-disabled' : ''}"
+                        th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='all',page=${allParticipantPage.totalPages - 1},pageSize=${pageSize})}">
+                    끝
+                </a>
+            </div>
+        </div>
+
+        <div
+                class="participant-report-grid"
+                th:if="${reportType == 'lecture' and not #lists.isEmpty(filteredLectures)}">
+            <aside class="participant-selector">
+                <a
+                        class="participant-selector-row"
+                        th:each="lecture : ${filteredLectures}"
+                        th:classappend="${selectedLecture != null and selectedLecture.id == lecture.id ? ' is-active' : ''}"
+                        th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='lecture',lectureType=${lectureType},lectureId=${lecture.id})}">
+                    <span>
+                        <small th:text="${lecture.type.name() == 'AM' ? '오전' : '오후'}">오전</small>
+                        <span class="speaker-inline">
+                            <strong th:text="${lecture.speakerName + ' 강사'}">강사명</strong>
+                            <small th:text="${lecture.speakerJob}">직업</small>
+                        </span>
+                    </span>
+                    <em>
+                        <span th:text="${lectureCounts[lecture.id]}">0</span>명
+                    </em>
+                </a>
+            </aside>
+
+            <div class="participant-table-panels">
+                <article class="participant-table-panel is-active">
+                    <div class="participant-table-title">
+                        <div>
+                            <h3>
+                                <span th:text="${selectedLecture.speakerName + ' 강사'}">강사명</span>
+                                <em
+                                        class="lecture-job-chip"
+                                        th:text="${selectedLecture.speakerJob}">
+                                    직업
+                                </em>
+                            </h3>
+                            <p>
+                                <span th:text="${selectedLecture.type.name() == 'AM' ? '오전 특강' : '오후 특강'}">오전 특강</span>
+                                ·
+                                <span th:text="${lectureCounts[selectedLecture.id]}">0</span>명 신청
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                            th:if="${#lists.isEmpty(selectedLectureApplications)}"
+                            class="empty-list">
+                        이 강좌에 신청한 참가자가 없습니다.
+                    </div>
+                    <div
+                            class="participant-table-wrap"
+                            th:unless="${#lists.isEmpty(selectedLectureApplications)}">
+                        <table class="participant-table">
+                            <thead>
+                            <tr>
+                                <th>번호</th>
+                                <th>이름</th>
+                                <th>구분</th>
+                                <th>교회</th>
+                                <th>전화번호</th>
+                                <th>신청시간</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <th:block th:each="lectureApplication, rowStat : ${selectedLectureApplications}">
+                                <tr
+                                        class="participant-click-row"
+                                        data-participant-action-toggle
+                                        th:attr="data-target=${'lecture-action-' + lectureApplication.participantEntity.id}">
+                                    <td th:text="${rowStat.count}">1</td>
+                                    <td th:text="${lectureApplication.participantEntity.name}">홍길동</td>
+                                    <td th:text="${lectureApplication.participantEntity.type.type.name() == 'STUDENT' ? '학생' : '교사'}">학생</td>
+                                    <td th:text="${lectureApplication.participantEntity.recruitmentChurchEntity.name}">교회명</td>
+                                    <td th:text="${lectureApplication.participantEntity.phoneNumber}">01000000000</td>
+                                    <td>
+                                        <span
+                                                th:if="${selectedLecture.type.name() == 'AM'}"
+                                                th:text="${#temporals.format(lectureApplication.morningLectureApplyAt, 'yyyy-MM-dd HH:mm')}">
+                                            2026-07-10 12:00
+                                        </span>
+                                        <span
+                                                th:if="${selectedLecture.type.name() == 'PM'}"
+                                                th:text="${#temporals.format(lectureApplication.afternoonLectureApplyAt, 'yyyy-MM-dd HH:mm')}">
+                                            2026-07-10 12:00
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr
+                                        class="participant-action-row"
+                                        th:id="${'lecture-action-' + lectureApplication.participantEntity.id}">
+                                    <td colspan="6">
+                                        <div class="participant-row-actions">
+                                            <form
+                                                    method="post"
+                                                    th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/edit-info(recruitmentId=${recruitment.id},participantId=${lectureApplication.participantEntity.id})}">
+                                                <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                                <button type="submit">인적사항 수정</button>
+                                            </form>
+                                            <form
+                                                    method="post"
+                                                    th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/edit-lecture(recruitmentId=${recruitment.id},participantId=${lectureApplication.participantEntity.id})}">
+                                                <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                                <button type="submit">수강정보 수정</button>
+                                            </form>
+                                            <form
+                                                    method="post"
+                                                    th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/delete(recruitmentId=${recruitment.id},participantId=${lectureApplication.participantEntity.id})}">
+                                                <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                                <button
+                                                        type="submit"
+                                                        class="danger"
+                                                        onclick="return confirm('참가자와 신청 정보를 삭제할까요?')">
+                                                    삭제
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </th:block>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+        </div>
+
+        <div
+                class="participant-report-grid"
+                th:if="${reportType == 'church' and not #lists.isEmpty(churches)}">
+            <aside class="participant-selector">
+                <a
+                        class="participant-selector-row"
+                        th:each="church : ${churches}"
+                        th:classappend="${selectedChurch != null and selectedChurch.id == church.id ? ' is-active' : ''}"
+                        th:href="@{/admin/recruitments/{recruitmentId}/participants(recruitmentId=${recruitment.id},reportType='church',churchId=${church.id})}">
+                    <span>
+                        <small>교회</small>
+                        <strong th:text="${church.name}">교회명</strong>
+                    </span>
+                    <em>
+                        <span th:text="${churchCounts[church.id]}">0</span>명
+                    </em>
+                </a>
+            </aside>
+
+            <div class="participant-table-panels">
+                <article class="participant-table-panel is-active">
+                    <div class="participant-table-title">
+                        <div>
+                            <h3 th:text="${selectedChurch.name}">교회명</h3>
+                            <p>
+                                <span th:text="${churchCounts[selectedChurch.id]}">0</span>명 신청
+                            </p>
+                        </div>
+                    </div>
+
+                    <div
+                            th:if="${#lists.isEmpty(selectedChurchParticipants)}"
+                            class="empty-list">
+                        이 교회에 등록된 참가자가 없습니다.
+                    </div>
+                    <div
+                            class="participant-table-wrap"
+                            th:unless="${#lists.isEmpty(selectedChurchParticipants)}">
+                        <table class="participant-table">
+                            <thead>
+                            <tr>
+                                <th>번호</th>
+                                <th>이름</th>
+                                <th>구분</th>
+                                <th>전화번호</th>
+                                <th>오전 신청</th>
+                                <th>오후 신청</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            <th:block
+                                    th:each="participant, rowStat : ${selectedChurchParticipants}"
+                                    th:with="participantLecture=${churchParticipantLectures[participant.id]}">
+                                <tr
+                                        class="participant-click-row"
+                                        data-participant-action-toggle
+                                        th:attr="data-target=${'church-action-' + participant.id}">
+                                    <td th:text="${rowStat.count}">1</td>
+                                    <td th:text="${participant.name}">홍길동</td>
+                                    <td th:text="${participant.type.type.name() == 'STUDENT' ? '학생' : '교사'}">학생</td>
+                                    <td th:text="${participant.phoneNumber}">01000000000</td>
+                                    <td>
+                                        <span
+                                                th:if="${participantLecture != null and participantLecture.morningLectureEntity != null}"
+                                                class="table-lecture-cell">
+                                            <span th:text="${participantLecture.morningLectureEntity.speakerName + ' 강사'}">강사명</span>
+                                            <em th:text="${participantLecture.morningLectureEntity.speakerJob}">직업</em>
+                                        </span>
+                                        <span th:unless="${participantLecture != null and participantLecture.morningLectureEntity != null}">-</span>
+                                    </td>
+                                    <td>
+                                        <span
+                                                th:if="${participantLecture != null and participantLecture.afternoonLectureEntity != null}"
+                                                class="table-lecture-cell">
+                                            <span th:text="${participantLecture.afternoonLectureEntity.speakerName + ' 강사'}">강사명</span>
+                                            <em th:text="${participantLecture.afternoonLectureEntity.speakerJob}">직업</em>
+                                        </span>
+                                        <span th:unless="${participantLecture != null and participantLecture.afternoonLectureEntity != null}">-</span>
+                                    </td>
+                                </tr>
+                                <tr
+                                        class="participant-action-row"
+                                        th:id="${'church-action-' + participant.id}">
+                                    <td colspan="6">
+                                        <div class="participant-row-actions">
+                                            <form
+                                                    method="post"
+                                                    th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/edit-info(recruitmentId=${recruitment.id},participantId=${participant.id})}">
+                                                <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                                <button type="submit">인적사항 수정</button>
+                                            </form>
+                                            <form
+                                                    method="post"
+                                                    th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/edit-lecture(recruitmentId=${recruitment.id},participantId=${participant.id})}">
+                                                <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                                <button type="submit">수강정보 수정</button>
+                                            </form>
+                                            <form
+                                                    method="post"
+                                                    th:action="@{/admin/recruitments/{recruitmentId}/participants/{participantId}/delete(recruitmentId=${recruitment.id},participantId=${participant.id})}">
+                                                <input type="hidden" name="returnUrl" th:value="${currentParticipantsUrl}">
+                                                <button
+                                                        type="submit"
+                                                        class="danger"
+                                                        onclick="return confirm('참가자와 신청 정보를 삭제할까요?')">
+                                                    삭제
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </th:block>
+                            </tbody>
+                        </table>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </section>
+</div>
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
+<div th:replace="~{fragments/footer :: adminLoginModal}"></div>
+<script th:replace="~{fragments/footer :: siteFooterScript}"></script>
+<script>
+    document.querySelectorAll('[data-participant-action-toggle]').forEach(function (row) {
+        row.addEventListener('click', function () {
+            const actionRow = document.getElementById(row.dataset.target);
+
+            if (!actionRow) {
+                return;
+            }
+
+            actionRow.classList.toggle('is-open');
+            row.classList.toggle('is-selected', actionRow.classList.contains('is-open'));
+        });
+    });
+</script>
+</body>
+</html>

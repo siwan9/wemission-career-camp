@@ -1,6 +1,6 @@
 package com.wemisson.career_camp.domain.recruitment.entity;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,11 +32,50 @@ public class RecruitmentEntity {
 	private String notice;
 
 	@Column(nullable = false)
-	private LocalDate startAt;
+	private LocalDateTime startAt;
 
 	@Column(nullable = false)
-	private LocalDate endAt;
+	private LocalDateTime endAt;
 
 	@Column(nullable = false)
 	private boolean isOpen;
+
+	public static RecruitmentEntity create(
+		String name,
+		String description,
+		String notice,
+		LocalDateTime startAt,
+		LocalDateTime endAt,
+		boolean isOpen
+	) {
+		RecruitmentEntity recruitmentEntity = new RecruitmentEntity();
+		recruitmentEntity.name = name;
+		recruitmentEntity.description = description;
+		recruitmentEntity.notice = notice;
+		recruitmentEntity.startAt = startAt;
+		recruitmentEntity.endAt = endAt;
+		recruitmentEntity.isOpen = isOpen;
+
+		return recruitmentEntity;
+	}
+
+	public void update(
+		String name,
+		String description,
+		String notice,
+		LocalDateTime startAt,
+		LocalDateTime endAt,
+		boolean isOpen
+	) {
+		this.name = name;
+		this.description = description;
+		this.notice = notice;
+		this.startAt = startAt;
+		this.endAt = endAt;
+		this.isOpen = isOpen;
+	}
+
+	public void changeOpen(boolean isOpen) {
+		this.isOpen = isOpen;
+	}
 }

@@ -18,7 +18,7 @@ public interface LectureRepository extends JpaRepository<LectureEntity, Long> {
 		where l.recruitmentEntity = :recruitmentEntity
 			and l.type = :type
 			and l.isOpen = true
-		order by l.id asc
+		order by l.sortOrder asc, l.id asc
 		""")
 	List<LectureEntity> findOpenLectures(
 		@Param("recruitmentEntity") RecruitmentEntity recruitmentEntity,
@@ -26,4 +26,13 @@ public interface LectureRepository extends JpaRepository<LectureEntity, Long> {
 	);
 
 	int countByRecruitmentEntity(RecruitmentEntity recruitmentEntity);
+
+	List<LectureEntity> findByRecruitmentEntityOrderByTypeAscSortOrderAscIdAsc(RecruitmentEntity recruitmentEntity);
+
+	List<LectureEntity> findByRecruitmentEntityAndTypeOrderBySortOrderAscIdAsc(
+		RecruitmentEntity recruitmentEntity,
+		LectureType type
+	);
+
+	void deleteByRecruitmentEntity(RecruitmentEntity recruitmentEntity);
 }

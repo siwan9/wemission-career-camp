@@ -6,14 +6,16 @@ import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentEntity;
-import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantType;
+import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeEntity;
 
-public interface RecruitmentParticipantTypeRepository extends JpaRepository<RecruitmentParticipantType, Long> {
+public interface RecruitmentParticipantTypeRepository extends JpaRepository<RecruitmentParticipantTypeEntity, Long> {
 
-	List<RecruitmentParticipantType> findByRecruitmentEntityOrderByIdAsc(RecruitmentEntity recruitmentEntity);
+	List<RecruitmentParticipantTypeEntity> findByRecruitmentEntityOrderByIdAsc(RecruitmentEntity recruitmentEntity);
 
-	Optional<RecruitmentParticipantType> findByRecruitmentEntityAndParticipantTypeEntityId(
+	Optional<RecruitmentParticipantTypeEntity> findByRecruitmentEntityAndParticipantTypeEntityId(
 		RecruitmentEntity recruitmentEntity,
 		Long participantTypeId
 	);
+
+	void deleteByRecruitmentEntity(RecruitmentEntity recruitmentEntity);
 }

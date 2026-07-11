@@ -82,4 +82,9 @@ public class ParticipantLectureEntity {
 		this.afternoonLectureEntity = null;
 		this.afternoonLectureApplyAt = null;
 	}
+
+	public boolean hasNoAppliedLecture() {
+		return morningLectureEntity == null
+			&& afternoonLectureEntity == null;
+	}
 }

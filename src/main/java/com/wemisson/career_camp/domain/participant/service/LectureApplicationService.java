@@ -97,6 +97,14 @@ public class LectureApplicationService {
 		lectureEntity.decreaseParticipantCount();
 		participantLectureEntity.cancel(lectureEntity);
 
+		if (participantLectureEntity.hasNoAppliedLecture()) {
+			ParticipantEntity participantEntity = participantLectureEntity.getParticipantEntity();
+			participantLectureRepository.delete(participantLectureEntity);
+			participantRepository.delete(participantEntity);
+
+			return toResult(participantLectureEntity, lectureEntity, true);
+		}
+
 		return toResult(participantLectureEntity, lectureEntity);
 	}
 
@@ -178,7 +186,22 @@ public class LectureApplicationService {
 			participantLectureEntity.getId(),
 			lectureEntity.getId(),
 			lectureEntity.getType(),
-			lectureEntity.getRemainingCapacity()
+			lectureEntity.getRemainingCapacity(),
+			false
+		);
+	}
+
+	private LectureApplicationResult toResult(
+		ParticipantLectureEntity participantLectureEntity,
+		LectureEntity lectureEntity,
+		boolean participantDeleted
+	) {
+		return new LectureApplicationResult(
+			participantLectureEntity.getId(),
+			lectureEntity.getId(),
+			lectureEntity.getType(),
+			lectureEntity.getRemainingCapacity(),
+			participantDeleted
 		);
 	}
 }

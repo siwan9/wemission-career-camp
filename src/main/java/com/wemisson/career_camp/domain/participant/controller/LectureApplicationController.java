@@ -104,10 +104,11 @@ public class LectureApplicationController {
 		RedirectAttributes redirectAttributes
 	) {
 		try {
-			lectureApplicationService.cancel(
+			LectureApplicationResult result = lectureApplicationService.cancel(
 				(Long)session.getAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY),
 				lectureId
 			);
+			clearParticipantLectureSessionIfDeleted(session, result);
 			redirectAttributes.addFlashAttribute("successMessage", "특강 신청이 취소되었습니다.");
 		} catch (RuntimeException e) {
 			redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -127,6 +128,7 @@ public class LectureApplicationController {
 				(Long)session.getAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY),
 				lectureId
 			);
+			clearParticipantLectureSessionIfDeleted(session, result);
 
 			return ResponseEntity.ok(toResponse(result, false, "특강 신청이 취소되었습니다."));
 		} catch (RuntimeException e) {
@@ -144,10 +146,20 @@ public class LectureApplicationController {
 			"success", true,
 			"message", message,
 			"selected", selected,
+			"participantDeleted", result.participantDeleted(),
 			"lectureId", result.lectureId(),
 			"lectureType", result.lectureType().name(),
 			"remainingCapacity", result.remainingCapacity()
 		);
+	}
+
+	private void clearParticipantLectureSessionIfDeleted(
+		HttpSession session,
+		LectureApplicationResult result
+	) {
+		if (result.participantDeleted()) {
+			session.removeAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY);
+		}
 	}
 
 	private boolean isAdmin(HttpSession session) {

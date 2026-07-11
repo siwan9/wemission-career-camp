@@ -483,6 +483,11 @@ body {
     overflow-wrap: anywhere;
 }
 
+.lecture-card .card-text,
+.lectureEntity-card .card-text {
+    white-space: pre-wrap;
+}
+
 .lecture-speaker-line {
     display: flex;
     flex-wrap: wrap;

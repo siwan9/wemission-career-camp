@@ -6,6 +6,7 @@ public record LectureApplicationResult(
 	Long participantLectureId,
 	Long lectureId,
 	LectureType lectureType,
-	int remainingCapacity
+	int remainingCapacity,
+	boolean participantDeleted
 ) {
 }

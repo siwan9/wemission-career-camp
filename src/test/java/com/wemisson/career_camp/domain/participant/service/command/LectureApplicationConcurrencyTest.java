@@ -3,6 +3,7 @@ package com.wemisson.career_camp.domain.participant.service.command;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -45,6 +46,8 @@ import com.wemisson.career_camp.domain.recruitment.service.query.RecruitmentQuer
 class LectureApplicationConcurrencyTest {
 
 	@Autowired
+	private Clock clock;
+	@Autowired
 	private LectureApplicationService lectureApplicationService;
 	@Autowired
 	private ParticipantLookupService participantLookupService;
@@ -82,8 +85,8 @@ class LectureApplicationConcurrencyTest {
 			"테스트 모집",
 			"설명",
 			"공지",
-			LocalDateTime.now().minusDays(1),
-			LocalDateTime.now().plusDays(1),
+			LocalDateTime.now(clock).minusDays(1),
+			LocalDateTime.now(clock).plusDays(1),
 			RecruitmentStatus.OPEN
 		));
 		studentType = participantTypeRepository.save(ParticipantTypeEntity.from(ParticipantType.STUDENT));
@@ -140,7 +143,7 @@ class LectureApplicationConcurrencyTest {
 			assertThat(results).containsExactlyInAnyOrder(true, false);
 			assertThat(participantLectureDraftRepository.countByLectureEntityAndExpiresAtAfter(
 				morningLecture,
-				LocalDateTime.now()
+				LocalDateTime.now(clock)
 			)).isEqualTo(1);
 		} finally {
 			executorService.shutdownNow();
@@ -192,7 +195,7 @@ class LectureApplicationConcurrencyTest {
 			assertThat(successCount).isEqualTo(capacity);
 			assertThat(participantLectureDraftRepository.countByLectureEntityAndExpiresAtAfter(
 				contestedLecture,
-				LocalDateTime.now()
+				LocalDateTime.now(clock)
 			)).isEqualTo(capacity);
 		} finally {
 			executorService.shutdownNow();
@@ -212,7 +215,7 @@ class LectureApplicationConcurrencyTest {
 
 		assertThat(participantLectureDraftRepository.countByLectureEntityAndExpiresAtAfter(
 			roomyMorningLecture,
-			LocalDateTime.now()
+			LocalDateTime.now(clock)
 		)).isEqualTo(2);
 
 		assertThat(releaseDraft(
@@ -223,7 +226,7 @@ class LectureApplicationConcurrencyTest {
 		).remainingCapacity()).isEqualTo(2);
 		assertThat(participantLectureDraftRepository.countByLectureEntityAndExpiresAtAfter(
 			roomyMorningLecture,
-			LocalDateTime.now()
+			LocalDateTime.now(clock)
 		)).isEqualTo(1);
 	}
 
@@ -287,7 +290,7 @@ class LectureApplicationConcurrencyTest {
 		assertThat(lectureRepository.findById(morningLecture.getId()).orElseThrow().getParticipantCount()).isEqualTo(1);
 		assertThat(participantLectureDraftRepository.countByLectureEntityAndExpiresAtAfter(
 			anotherMorningLecture,
-			LocalDateTime.now()
+			LocalDateTime.now(clock)
 		)).isEqualTo(1);
 
 		releaseDraft(request, participantLectureId, anotherMorningLecture.getId(), editDraftToken);
@@ -331,7 +334,7 @@ class LectureApplicationConcurrencyTest {
 			.getId()).isEqualTo(anotherMorningLecture.getId());
 		assertThat(participantLectureDraftRepository.findByDraftTokenAndExpiresAtAfter(
 			editDraftToken,
-			LocalDateTime.now()
+			LocalDateTime.now(clock)
 		)).isEmpty();
 	}
 
@@ -374,7 +377,7 @@ class LectureApplicationConcurrencyTest {
 		assertThat(savedAfternoonLecture.getParticipantCount()).isEqualTo(1);
 		assertThat(participantLectureDraftRepository.findByDraftTokenAndExpiresAtAfter(
 			draftToken,
-			LocalDateTime.now()
+			LocalDateTime.now(clock)
 		)).isEmpty();
 		assertThat(participantRepository.countByRecruitmentEntity(recruitment)).isEqualTo(1);
 		assertThat(participantLectureRepository.findAll()).hasSize(1);
@@ -413,7 +416,7 @@ class LectureApplicationConcurrencyTest {
 	void 만료된_임시점유는_최종확정할_수_없다() {
 		ParticipantCreateRequest request = createRequest("만료점유", "01035353535");
 		String draftToken = "expired-finalize-token";
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(clock);
 
 		participantLectureDraftRepository.save(ParticipantLectureDraftEntity.create(
 			draftToken,
@@ -450,7 +453,7 @@ class LectureApplicationConcurrencyTest {
 		holdDraft(request, null, afternoonLecture.getId(), initialDraftToken, false);
 		Long participantLectureId = finalizeDraft(request, null, initialDraftToken, false)
 			.participantLectureId();
-		LocalDateTime now = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now(clock);
 
 		participantLectureDraftRepository.save(ParticipantLectureDraftEntity.create(
 			editDraftToken,
@@ -477,8 +480,8 @@ class LectureApplicationConcurrencyTest {
 			"다른 모집",
 			"설명",
 			"공지",
-			LocalDateTime.now().minusDays(1),
-			LocalDateTime.now().plusDays(1),
+			LocalDateTime.now(clock).minusDays(1),
+			LocalDateTime.now(clock).plusDays(1),
 			RecruitmentStatus.CLOSED
 		));
 		LectureEntity otherLecture = lectureRepository.save(

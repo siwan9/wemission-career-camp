@@ -3,6 +3,7 @@ package com.wemisson.career_camp.domain.admin.service.command;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -44,6 +45,8 @@ import com.wemisson.career_camp.domain.recruitment.service.query.RecruitmentQuer
 class AdminRecruitmentCommandServiceTest {
 
 	@Autowired
+	private Clock clock;
+	@Autowired
 	private AdminRecruitmentCommandService adminRecruitmentCommandService;
 	@Autowired
 	private RecruitmentQueryService recruitmentQueryService;
@@ -81,8 +84,8 @@ class AdminRecruitmentCommandServiceTest {
 			"테스트 모집",
 			"설명",
 			"공지",
-			LocalDateTime.now().minusDays(1),
-			LocalDateTime.now().plusDays(1),
+			LocalDateTime.now(clock).minusDays(1),
+			LocalDateTime.now(clock).plusDays(1),
 			RecruitmentStatus.CLOSED
 		));
 		studentType = participantTypeRepository.save(ParticipantTypeEntity.from(ParticipantType.STUDENT));
@@ -110,16 +113,16 @@ class AdminRecruitmentCommandServiceTest {
 			null,
 			recruitment,
 			morningLecture,
-			LocalDateTime.now().plusMinutes(3),
-			LocalDateTime.now()
+			LocalDateTime.now(clock).plusMinutes(3),
+			LocalDateTime.now(clock)
 		));
 		participantLectureDraftRepository.save(ParticipantLectureDraftEntity.create(
 			"draft-2",
 			null,
 			recruitment,
 			morningLecture,
-			LocalDateTime.now().plusMinutes(3),
-			LocalDateTime.now()
+			LocalDateTime.now(clock).plusMinutes(3),
+			LocalDateTime.now(clock)
 		));
 
 		assertThatThrownBy(() -> adminRecruitmentCommandService.updateLecture(
@@ -155,8 +158,8 @@ class AdminRecruitmentCommandServiceTest {
 			"빈 모집",
 			"설명",
 			"공지",
-			LocalDateTime.now().minusDays(1),
-			LocalDateTime.now().plusDays(1),
+			LocalDateTime.now(clock).minusDays(1),
+			LocalDateTime.now(clock).plusDays(1),
 			RecruitmentStatus.CLOSED
 		));
 
@@ -191,8 +194,8 @@ class AdminRecruitmentCommandServiceTest {
 			"대기중 모집",
 			"설명",
 			"공지",
-			LocalDateTime.now().minusDays(1),
-			LocalDateTime.now().plusDays(1),
+			LocalDateTime.now(clock).minusDays(1),
+			LocalDateTime.now(clock).plusDays(1),
 			RecruitmentStatus.WAITING
 		));
 		recruitmentChurchRepository.save(RecruitmentChurchEntity.create(waitingRecruitment, "대기중 교회", 1));
@@ -222,16 +225,16 @@ class AdminRecruitmentCommandServiceTest {
 			"시작시간 지난 모집",
 			"설명",
 			"공지",
-			LocalDateTime.now().minusSeconds(10),
-			LocalDateTime.now().plusDays(1),
+			LocalDateTime.now(clock).minusSeconds(10),
+			LocalDateTime.now(clock).plusDays(1),
 			RecruitmentStatus.CLOSED
 		));
 		RecruitmentEntity waitingRecruitment = recruitmentRepository.save(RecruitmentEntity.create(
 			"대기중 모집",
 			"설명",
 			"공지",
-			LocalDateTime.now().plusDays(1),
-			LocalDateTime.now().plusDays(2),
+			LocalDateTime.now(clock).plusDays(1),
+			LocalDateTime.now(clock).plusDays(2),
 			RecruitmentStatus.WAITING
 		));
 
@@ -249,8 +252,8 @@ class AdminRecruitmentCommandServiceTest {
 			"다른 모집",
 			"설명",
 			"공지",
-			LocalDateTime.now().minusDays(1),
-			LocalDateTime.now().plusDays(1),
+			LocalDateTime.now(clock).minusDays(1),
+			LocalDateTime.now(clock).plusDays(1),
 			RecruitmentStatus.CLOSED
 		));
 		recruitmentChurchRepository.save(RecruitmentChurchEntity.create(otherRecruitment, "다른 교회", 1));

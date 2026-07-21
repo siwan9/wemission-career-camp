@@ -2,8 +2,12 @@ package com.wemisson.career_camp.domain.recruitment.entity;
 
 import java.time.LocalDateTime;
 
+import com.wemisson.career_camp.domain.recruitment.dto.RecruitmentStatus;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -37,8 +41,9 @@ public class RecruitmentEntity {
 	@Column(nullable = false)
 	private LocalDateTime endAt;
 
+	@Enumerated(EnumType.STRING)
 	@Column(nullable = false)
-	private boolean isOpen;
+	private RecruitmentStatus status;
 
 	public static RecruitmentEntity create(
 		String name,
@@ -46,7 +51,7 @@ public class RecruitmentEntity {
 		String notice,
 		LocalDateTime startAt,
 		LocalDateTime endAt,
-		boolean isOpen
+		RecruitmentStatus status
 	) {
 		RecruitmentEntity recruitmentEntity = new RecruitmentEntity();
 		recruitmentEntity.name = name;
@@ -54,7 +59,7 @@ public class RecruitmentEntity {
 		recruitmentEntity.notice = notice;
 		recruitmentEntity.startAt = startAt;
 		recruitmentEntity.endAt = endAt;
-		recruitmentEntity.isOpen = isOpen;
+		recruitmentEntity.status = status;
 
 		return recruitmentEntity;
 	}
@@ -65,17 +70,33 @@ public class RecruitmentEntity {
 		String notice,
 		LocalDateTime startAt,
 		LocalDateTime endAt,
-		boolean isOpen
+		RecruitmentStatus status
 	) {
 		this.name = name;
 		this.description = description;
 		this.notice = notice;
 		this.startAt = startAt;
 		this.endAt = endAt;
-		this.isOpen = isOpen;
+		this.status = status;
 	}
 
-	public void changeOpen(boolean isOpen) {
-		this.isOpen = isOpen;
+	public void changeStatus(RecruitmentStatus status) {
+		this.status = status;
+	}
+
+	public boolean isOpen() {
+		return status == RecruitmentStatus.OPEN;
+	}
+
+	public boolean isWaiting() {
+		return status == RecruitmentStatus.WAITING;
+	}
+
+	public boolean isClosed() {
+		return status == RecruitmentStatus.CLOSED;
+	}
+
+	public String getStatusDescription() {
+		return status.getDescription();
 	}
 }

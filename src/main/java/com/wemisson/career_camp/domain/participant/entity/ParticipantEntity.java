@@ -37,10 +37,6 @@ public class ParticipantEntity {
 	@Column(nullable = false)
 	private String phoneNumber;
 
-	@Pattern(regexp = "^\\d{6}$", message = "비밀번호는 6자리 숫자여야 합니다.")
-	@Column(nullable = false)
-	private String password;
-
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "recruitment_id", nullable = false)
 	private RecruitmentEntity recruitmentEntity;
@@ -54,8 +50,7 @@ public class ParticipantEntity {
 		RecruitmentEntity recruitmentEntity,
 		ParticipantTypeEntity type,
 		RecruitmentChurchEntity recruitmentChurchEntity,
-		String phoneNumber,
-		String password
+		String phoneNumber
 	) {
 		ParticipantEntity participantEntity = new ParticipantEntity();
 		participantEntity.name = name;
@@ -63,7 +58,6 @@ public class ParticipantEntity {
 		participantEntity.participantTypeEntity = type;
 		participantEntity.recruitmentChurchEntity = recruitmentChurchEntity;
 		participantEntity.phoneNumber = phoneNumber;
-		participantEntity.password = password;
 
 		return participantEntity;
 	}
@@ -72,14 +66,12 @@ public class ParticipantEntity {
 		String name,
 		ParticipantTypeEntity type,
 		RecruitmentChurchEntity recruitmentChurchEntity,
-		String phoneNumber,
-		String password
+		String phoneNumber
 	) {
 		this.name = name;
 		this.participantTypeEntity = type;
 		this.recruitmentChurchEntity = recruitmentChurchEntity;
 		this.phoneNumber = phoneNumber;
-		this.password = password;
 	}
 
 	public ParticipantTypeEntity getType() {

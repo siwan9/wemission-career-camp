@@ -38,11 +38,55 @@ body {
 .subtitle {
     font-size: clamp(1rem, 2.8vw, 1.2rem);
     color: #6c757d;
-    margin-bottom: 3rem;
+    margin-bottom: 2rem;
+    line-height: 1.75;
 }
 
 .home-description {
     white-space: pre-wrap;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+}
+
+.home-state-message {
+    display: grid;
+    gap: 4px;
+    max-width: 520px;
+    margin: 0 auto 2rem;
+    padding: 14px 16px;
+    border-radius: 12px;
+    color: #5c6770;
+}
+
+.home-state-message strong {
+    font-size: 1.05em;
+}
+
+.home-state-message-open {
+    border: 1px solid #b7dfc7;
+    background: #f3fbf6;
+}
+
+.home-state-message-open strong {
+    color: #237b46;
+}
+
+.home-state-message-waiting {
+    border: 1px solid #ffd89b;
+    background: #fff9ed;
+}
+
+.home-state-message-waiting strong {
+    color: #b66a00;
+}
+
+.home-state-message-closed {
+    border: 1px solid #f1b8bd;
+    background: #fff8f8;
+}
+
+.home-state-message-closed strong {
+    color: #c92a2a;
 }
 
 .menu-wrapper {
@@ -78,6 +122,18 @@ body {
     padding: clamp(20px, 4vw, 30px);
     margin-bottom: 2rem;
     box-shadow: 0 8px 24px rgba(0,0,0,0.05);
+}
+
+.notice-card-closed {
+    border: 1px solid #f3c2c7;
+}
+
+.notice-card-waiting {
+    border: 1px solid #ffe0a8;
+}
+
+.notice-card-open {
+    border: 1px solid #bfe6ce;
 }
 
 .emoji {

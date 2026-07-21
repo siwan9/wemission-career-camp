@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1">
+
+    <title>신청 완료</title>
+
+    <link
+            th:href="@{/vendor/bootstrap/bootstrap.min.css}"
+            rel="stylesheet">
+    <link
+            rel="stylesheet"
+            th:href="@{/css/footer.css}">
+
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+
+        .complete-container {
+            max-width: 560px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
+        .complete-card {
+            border: 1px solid #e7edf4;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .08);
+            padding: 24px;
+        }
+
+        .complete-title {
+            margin-bottom: 6px;
+            color: #0f5132;
+            font-size: 1.7rem;
+            font-weight: 800;
+            text-align: center;
+        }
+
+        .complete-subtitle {
+            margin-bottom: 22px;
+            color: #495057;
+            font-size: .98rem;
+            font-weight: 600;
+            text-align: center;
+            line-height: 1.45;
+        }
+
+        .complete-section {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid #edf1f5;
+        }
+
+        .complete-section-title {
+            margin-bottom: 12px;
+            color: #212529;
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .complete-row {
+            display: grid;
+            grid-template-columns: 86px 1fr;
+            gap: 10px;
+            min-height: 34px;
+            align-items: center;
+            color: #495057;
+        }
+
+        .complete-label {
+            color: #0d6efd;
+            font-weight: 800;
+        }
+
+        .lecture-result {
+            display: grid;
+            gap: 10px;
+        }
+
+        .lecture-result-item {
+            border: 1px solid #dbe2ea;
+            border-radius: 12px;
+            background: #fbfcfe;
+            padding: 14px;
+        }
+
+        .lecture-result-time {
+            margin-bottom: 4px;
+            color: #0d6efd;
+            font-size: .9rem;
+            font-weight: 800;
+        }
+
+        .lecture-result-name {
+            color: #212529;
+            font-weight: 800;
+        }
+
+        .lecture-result-job {
+            margin-top: 2px;
+            color: #6c757d;
+            font-size: .92rem;
+            font-weight: 600;
+        }
+
+        .complete-notice {
+            margin-top: 18px;
+            border: 1px solid #cfe2ff;
+            border-radius: 12px;
+            background: #f3f8ff;
+            color: #344767;
+            padding: 14px;
+            font-size: .94rem;
+            font-weight: 650;
+            line-height: 1.5;
+        }
+
+        .home-link-button {
+            min-height: 50px;
+            border: 1px solid #d7dee8;
+            border-radius: 10px;
+            background: #f8f9fb;
+            color: #495057;
+            font-weight: 800;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .home-link-button:hover {
+            border-color: #c8d0dc;
+            background: #eef1f5;
+            color: #212529;
+        }
+
+        @media (max-width: 576px) {
+            .complete-container {
+                padding: 10px;
+            }
+
+            .complete-card {
+                padding: 18px;
+            }
+
+            .complete-title {
+                font-size: 1.45rem;
+            }
+
+            .complete-row {
+                grid-template-columns: 72px 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="complete-container">
+    <div class="complete-card">
+        <h2 class="complete-title">신청이 완료되었습니다</h2>
+        <div
+                class="complete-subtitle"
+                th:text="${completeView.recruitmentName}">
+            모집명
+        </div>
+
+        <div class="complete-section">
+            <div class="complete-section-title">인적사항</div>
+            <div class="complete-row">
+                <div class="complete-label">이름</div>
+                <div th:text="${completeView.participantName}">참가자명</div>
+            </div>
+            <div class="complete-row">
+                <div class="complete-label">구분</div>
+                <div th:text="${completeView.participantTypeName}">학생</div>
+            </div>
+            <div class="complete-row">
+                <div class="complete-label">교회</div>
+                <div th:text="${completeView.churchName}">교회명</div>
+            </div>
+            <div class="complete-row">
+                <div class="complete-label">연락처</div>
+                <div th:text="${completeView.phoneNumber}">01000000000</div>
+            </div>
+        </div>
+
+        <div class="complete-section">
+            <div class="complete-section-title">수강신청 내역</div>
+            <div class="lecture-result">
+                <div class="lecture-result-item">
+                    <div class="lecture-result-time">오전 특강</div>
+                    <div
+                            class="lecture-result-name"
+                            th:text="${completeView.morningLectureName}">
+                        오전 강좌
+                    </div>
+                    <div
+                            class="lecture-result-job"
+                            th:if="${!#strings.isEmpty(completeView.morningLectureJob)}"
+                            th:text="${completeView.morningLectureJob}">
+                        직업
+                    </div>
+                </div>
+                <div class="lecture-result-item">
+                    <div class="lecture-result-time">오후 특강</div>
+                    <div
+                            class="lecture-result-name"
+                            th:text="${completeView.afternoonLectureName}">
+                        오후 강좌
+                    </div>
+                    <div
+                            class="lecture-result-job"
+                            th:if="${!#strings.isEmpty(completeView.afternoonLectureJob)}"
+                            th:text="${completeView.afternoonLectureJob}">
+                        직업
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="complete-notice">
+            신청 내용을 수정하려면 홈으로 이동한 뒤 신청 내역 조회에서 이름, 교회, 전화번호로 조회해주세요.
+        </div>
+
+        <a
+                th:href="${adminReturnUrl != null ? adminReturnUrl : '/home'}"
+                class="btn home-link-button w-100 mt-3"
+                role="button"
+                th:text="${adminReturnUrl != null ? '관리 화면으로 돌아가기' : '홈으로 가기'}">
+            홈으로 가기
+        </a>
+    </div>
+</div>
+
+<div th:replace="~{fragments/footer :: siteFooter}"></div>
+<div th:replace="~{fragments/footer :: adminLoginModal}"></div>
+</body>
+</html>

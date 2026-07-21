@@ -5,12 +5,12 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.wemisson.career_camp.domain.admin.entity.AdminEntity;
-import com.wemisson.career_camp.domain.admin.repository.AdminRepository;
+import com.wemisson.career_camp.domain.admin.service.auth.AdminAuthService;
 
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +22,12 @@ public class AdminAuthController {
 	public static final String ADMIN_ID_SESSION_KEY = "adminId";
 	public static final String ADMIN_NAME_SESSION_KEY = "adminName";
 
-	private final AdminRepository adminRepository;
+	private final AdminAuthService adminAuthService;
+
+	@GetMapping("/admin/login")
+	public String adminLogin() {
+		return "redirect:/home";
+	}
 
 	@PostMapping("/admin/login")
 	@ResponseBody
@@ -31,10 +36,10 @@ public class AdminAuthController {
 		@RequestParam String password,
 		HttpSession session
 	) {
-		AdminEntity adminEntity = adminRepository.findByNameAndPassword(name, password)
+		AdminAuthService.AuthenticatedAdmin admin = adminAuthService.authenticate(name, password)
 			.orElse(null);
 
-		if (adminEntity == null) {
+		if (admin == null) {
 			return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
 				.body(Map.of(
 					"success", false,
@@ -42,8 +47,8 @@ public class AdminAuthController {
 				));
 		}
 
-		session.setAttribute(ADMIN_ID_SESSION_KEY, adminEntity.getId());
-		session.setAttribute(ADMIN_NAME_SESSION_KEY, adminEntity.getName());
+		session.setAttribute(ADMIN_ID_SESSION_KEY, admin.id());
+		session.setAttribute(ADMIN_NAME_SESSION_KEY, admin.name());
 
 		return ResponseEntity.ok(Map.of(
 			"success", true,

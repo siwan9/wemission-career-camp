@@ -139,69 +139,6 @@ body {
     text-align: center;
 }
 
-.password-field {
-    position: relative;
-}
-
-.password-field .form-control {
-    padding-right: 58px;
-}
-
-.password-toggle {
-    position: absolute;
-    top: 50%;
-    right: 10px;
-    width: 38px;
-    height: 38px;
-    padding: 0;
-    border: 0;
-    border-radius: 50%;
-    background: transparent;
-    color: #212529;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    transform: translateY(-50%);
-}
-
-.password-toggle:hover {
-    background: transparent;
-    color: #000000;
-}
-
-.password-toggle:focus-visible {
-    outline: 2px solid #adb5bd;
-    outline-offset: 2px;
-}
-
-.password-toggle-icon {
-    flex-shrink: 0;
-}
-
-.password-toggle-icon-hide {
-    display: none;
-}
-
-.password-toggle.is-visible .password-toggle-icon-show {
-    display: none;
-}
-
-.password-toggle.is-visible .password-toggle-icon-hide {
-    display: block;
-}
-
-.pin-edit-notice {
-    margin-top: 10px;
-    padding: 11px 13px;
-    border: 1px solid #f1c6cb;
-    border-radius: 10px;
-    background: #fff7f8;
-    color: #b02a37;
-    font-size: .92rem;
-    font-weight: 700;
-    line-height: 1.45;
-}
-
 .lecture-select {
     color: #adb5bd;
 }
@@ -310,6 +247,46 @@ body {
     color: #212529;
 }
 
+.lecture-draft-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 18px 0 26px;
+    padding: 16px;
+    border: 1px solid #b9d7ff;
+    border-radius: 12px;
+    background: #f3f8ff;
+}
+
+.lecture-draft-panel-main {
+    min-width: 0;
+}
+
+.lecture-draft-panel-title {
+    margin-bottom: 4px;
+    color: #084298;
+    font-size: .96rem;
+    font-weight: 800;
+}
+
+.lecture-draft-panel-message {
+    color: #344767;
+    font-size: .95rem;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.lecture-card-draft-timer strong.is-expiring,
+.lectureEntity-card[data-lecture-type="PM"] .lecture-card-draft-timer strong.is-expiring {
+    color: #dc3545;
+}
+
+.lecture-card-draft-timer strong.is-expired,
+.lectureEntity-card[data-lecture-type="PM"] .lecture-card-draft-timer strong.is-expired {
+    color: #868e96;
+}
+
 @media (max-width: 576px) {
 
     .registration-container {
@@ -362,6 +339,14 @@ body {
     .modal-footer.duplicate-actions {
         grid-template-columns: 1fr;
     }
+
+    .lecture-draft-panel {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 12px;
+        padding: 14px;
+    }
+
 }
 .section-header {
     display: flex;
@@ -572,6 +557,43 @@ body {
     color: #ffffff;
 }
 
+.lecture-card-draft-timer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    border: 1px solid #cfe2ff;
+    border-radius: 8px;
+    background: #ffffff;
+    color: #344767;
+    line-height: 1.2;
+}
+
+.lectureEntity-card[data-lecture-type="PM"] .lecture-card-draft-timer {
+    border-color: #d8ccef;
+}
+
+.lecture-card-draft-timer span {
+    min-width: 0;
+    color: #5d6978;
+    font-size: .84rem;
+    font-weight: 800;
+}
+
+.lecture-card-draft-timer strong {
+    flex: 0 0 auto;
+    color: #0b5ed7;
+    font-variant-numeric: tabular-nums;
+    font-size: 1.1rem;
+    font-weight: 900;
+}
+
+.lectureEntity-card[data-lecture-type="PM"] .lecture-card-draft-timer strong {
+    color: #6f42c1;
+}
+
 .lecture-btn-muted,
 .lectureEntity-btn-muted,
 .lecture-btn:disabled,
@@ -587,6 +609,31 @@ body {
     border-color: #d8ccef;
     background: #f6f1ff;
     color: #6f42c1;
+}
+
+.finalize-button {
+    min-height: 56px;
+    font-size: 1.08rem;
+    font-weight: 800;
+}
+
+.finalize-button-ready {
+    border-color: #198754;
+    background: #198754;
+    color: #ffffff;
+}
+
+.finalize-button-ready:hover {
+    border-color: #157347;
+    background: #157347;
+    color: #ffffff;
+}
+
+.finalize-button-disabled,
+.finalize-button:disabled {
+    border-color: #ced4da;
+    background: #f1f3f5;
+    color: #868e96;
 }
 
 .lectureEntity-card-pending {

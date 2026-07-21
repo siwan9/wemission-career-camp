@@ -407,11 +407,83 @@ body {
     gap: 12px;
 }
 
+.recruitment-dropzone {
+    min-height: 72px;
+    border-radius: 14px;
+    transition: background .15s ease, box-shadow .15s ease;
+}
+
+.recruitment-status-groups {
+    display: grid;
+    gap: 16px;
+}
+
+.recruitment-status-group {
+    padding: 18px;
+    border: 1px solid #e3e8ef;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, .05);
+    transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+
+.recruitment-status-group.is-drag-over {
+    border-color: #86b7fe;
+    background: #f4f9ff;
+    box-shadow: 0 10px 26px rgba(13, 110, 253, .12);
+}
+
+.recruitment-status-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.recruitment-status-title {
+    margin: 0;
+    color: #1f2937;
+    font-size: 1rem;
+    font-weight: 850;
+}
+
+.recruitment-status-description {
+    margin: 5px 0 0;
+    color: #6c757d;
+    font-size: .9rem;
+    font-weight: 650;
+    line-height: 1.45;
+}
+
+.recruitment-status-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    min-height: 30px;
+    padding: 4px 10px;
+    border: 1px solid #cfe2ff;
+    border-radius: 999px;
+    background: #e7f1ff;
+    color: #0b5ed7;
+    font-size: .86rem;
+    font-weight: 850;
+}
+
 .recruitment-manage-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr) 84px;
     gap: 10px;
     align-items: stretch;
+    cursor: grab;
+    transition: opacity .15s ease, transform .15s ease;
+}
+
+.recruitment-manage-row.is-dragging {
+    opacity: .48;
+    cursor: grabbing;
+    transform: scale(.99);
 }
 
 .recruitment-card {
@@ -424,6 +496,10 @@ body {
     text-decoration: none;
     box-shadow: 0 6px 18px rgba(15, 23, 42, .05);
     transition: border-color .15s ease, box-shadow .15s ease, transform .15s ease;
+}
+
+.recruitment-card:active {
+    cursor: grabbing;
 }
 
 .recruitment-card:hover {
@@ -527,6 +603,10 @@ body {
     color: #6c757d;
     text-align: center;
     font-weight: 700;
+}
+
+.empty-state-compact {
+    padding: 16px;
 }
 
 @media (max-width: 768px) {

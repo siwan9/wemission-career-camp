@@ -84,13 +84,25 @@
                             required>
                 </label>
             </div>
-            <label class="settings-check">
-                <input
-                        type="checkbox"
-                        name="isOpen"
-                        value="true"
-                        th:checked="${recruitment.open}">
-                모집중
+            <label>
+                모집 상태
+                <select name="status" required>
+                    <option
+                            value="CLOSED"
+                            th:selected="${recruitment.status.name() == 'CLOSED'}">
+                        종료
+                    </option>
+                    <option
+                            value="WAITING"
+                            th:selected="${recruitment.status.name() == 'WAITING'}">
+                        대기중
+                    </option>
+                    <option
+                            value="OPEN"
+                            th:selected="${recruitment.status.name() == 'OPEN'}">
+                        모집시작
+                    </option>
+                </select>
             </label>
             <button type="submit">
                 모집 정보 저장
@@ -270,11 +282,14 @@
                                                 type="number"
                                                 name="maxCapacity"
                                                 min="0"
-                                                step="1"
-                                                th:value="${lecture.maxCapacity}"
-                                                required>
-                                    </label>
-                                </div>
+	                                                step="1"
+	                                                th:value="${lecture.maxCapacity}"
+	                                                required>
+	                                    </label>
+	                                    <p class="settings-field-help settings-grid-help">
+	                                        정원 감소는 신청자와 임시점유 인원보다 낮게 저장할 수 없습니다.
+	                                    </p>
+	                                </div>
                                 <label>
                                     강사명
                                     <input
@@ -395,11 +410,14 @@
                                                 type="number"
                                                 name="maxCapacity"
                                                 min="0"
-                                                step="1"
-                                                th:value="${lecture.maxCapacity}"
-                                                required>
-                                    </label>
-                                </div>
+	                                                step="1"
+	                                                th:value="${lecture.maxCapacity}"
+	                                                required>
+	                                    </label>
+	                                    <p class="settings-field-help settings-grid-help">
+	                                        정원 감소는 신청자와 임시점유 인원보다 낮게 저장할 수 없습니다.
+	                                    </p>
+	                                </div>
                                 <label>
                                     강사명
                                     <input

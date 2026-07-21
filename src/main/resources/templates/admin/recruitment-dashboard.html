@@ -44,34 +44,50 @@
                         type="submit"
                         class="page-subtitle status-toggle-button"
                         th:classappend="${recruitment.open ? '' : ' page-subtitle-muted'}"
-                        th:text="${recruitment.open ? '모집중' : '종료'}"
-                        th:attr="aria-label=${recruitment.open ? '모집 종료로 변경' : '모집중으로 변경'}"
+                        th:text="${recruitment.statusDescription}"
+                        th:attr="aria-label=${nextRecruitmentStatusDescription + '(으)로 변경'}"
                         onclick="return confirm('모집 상태를 변경할까요?')">
-                    모집중
+                    모집시작
                 </button>
             </form>
 
         </div>
 
-        <button
-                type="button"
-                class="dashboard-refresh-button"
-                aria-label="신청자 현황 새로고침"
-                onclick="window.location.reload()">
-            <svg
-                    aria-hidden="true"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    stroke-width="2"
-                    stroke-linecap="round"
-                    stroke-linejoin="round">
-                <path d="M21 2v6h-6"/>
-                <path d="M3 12a9 9 0 0 1 15.55-6.36L21 8"/>
-                <path d="M3 22v-6h6"/>
-                <path d="M21 12a9 9 0 0 1-15.55 6.36L3 16"/>
-            </svg>
-        </button>
+        <div class="page-header-actions">
+            <form
+                    method="post"
+                    th:action="@{/admin/recruitments/{recruitmentId}/participants/new(recruitmentId=${recruitment.id})}">
+                <input
+                        type="hidden"
+                        name="returnUrl"
+                        th:value="@{/admin/recruitment-dashboard/{recruitmentId}(recruitmentId=${recruitment.id})}">
+                <button
+                        type="submit"
+                        class="admin-primary-button">
+                    신청자 추가
+                </button>
+            </form>
+
+            <button
+                    type="button"
+                    class="dashboard-refresh-button"
+                    aria-label="신청자 현황 새로고침"
+                    onclick="window.location.reload()">
+                <svg
+                        aria-hidden="true"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round">
+                    <path d="M21 2v6h-6"/>
+                    <path d="M3 12a9 9 0 0 1 15.55-6.36L21 8"/>
+                    <path d="M3 22v-6h6"/>
+                    <path d="M21 12a9 9 0 0 1-15.55 6.36L3 16"/>
+                </svg>
+            </button>
+        </div>
 
     </header>
 
@@ -80,6 +96,12 @@
             th:if="${toastMessage != null}"
             th:text="${toastMessage}">
         처리되었습니다.
+    </div>
+    <div
+            class="admin-toast admin-toast-error"
+            th:if="${errorMessage != null}"
+            th:text="${errorMessage}">
+        오류가 발생했습니다.
     </div>
 
     <!-- 통계 -->
@@ -130,16 +152,32 @@
                     th:unless="${#lists.isEmpty(morningLectures)}">
                 <div
                         class="lecture-row"
+                        th:classappend="${lecture.participantCount > lecture.maxCapacity ? ' lecture-row-over' : (lecture.participantCount >= lecture.maxCapacity ? ' lecture-row-full' : '')}"
                         th:each="lecture : ${morningLectures}">
-                    <span>
-                        <span th:text="${lecture.speakerName + ' 강사'}">강사명</span>
-                        <em
-                                class="lecture-job-chip"
-                                th:text="${lecture.speakerJob}">
-                            직업
+                    <div class="lecture-row-main">
+                        <span>
+                            <span th:text="${lecture.speakerName + ' 강사'}">강사명</span>
+                            <em
+                                    class="lecture-job-chip"
+                                    th:text="${lecture.speakerJob}">
+                                직업
+                            </em>
+                        </span>
+                        <div
+                                class="lecture-capacity-bar"
+                                th:style="${'--capacity-rate:' + (lecture.maxCapacity > 0 ? (lecture.participantCount * 100 / lecture.maxCapacity > 100 ? 100 : lecture.participantCount * 100 / lecture.maxCapacity) : 0) + '%'}">
+                        </div>
+                    </div>
+                    <div class="lecture-capacity-summary">
+                        <strong>
+                            <span th:text="${lecture.participantCount}">0</span>
+                            <small>/</small>
+                            <span th:text="${lecture.maxCapacity}">0</span>
+                        </strong>
+                        <em th:text="${lecture.participantCount > lecture.maxCapacity ? '초과' : (lecture.participantCount >= lecture.maxCapacity ? '마감' : '여유')}">
+                            여유
                         </em>
-                    </span>
-                    <strong th:text="${lecture.participantCount + ' / ' + lecture.maxCapacity}">0 / 0</strong>
+                    </div>
                 </div>
             </div>
         </div>
@@ -158,16 +196,32 @@
                     th:unless="${#lists.isEmpty(afternoonLectures)}">
                 <div
                         class="lecture-row"
+                        th:classappend="${lecture.participantCount > lecture.maxCapacity ? ' lecture-row-over' : (lecture.participantCount >= lecture.maxCapacity ? ' lecture-row-full' : '')}"
                         th:each="lecture : ${afternoonLectures}">
-                    <span>
-                        <span th:text="${lecture.speakerName + ' 강사'}">강사명</span>
-                        <em
-                                class="lecture-job-chip"
-                                th:text="${lecture.speakerJob}">
-                            직업
+                    <div class="lecture-row-main">
+                        <span>
+                            <span th:text="${lecture.speakerName + ' 강사'}">강사명</span>
+                            <em
+                                    class="lecture-job-chip"
+                                    th:text="${lecture.speakerJob}">
+                                직업
+                            </em>
+                        </span>
+                        <div
+                                class="lecture-capacity-bar"
+                                th:style="${'--capacity-rate:' + (lecture.maxCapacity > 0 ? (lecture.participantCount * 100 / lecture.maxCapacity > 100 ? 100 : lecture.participantCount * 100 / lecture.maxCapacity) : 0) + '%'}">
+                        </div>
+                    </div>
+                    <div class="lecture-capacity-summary">
+                        <strong>
+                            <span th:text="${lecture.participantCount}">0</span>
+                            <small>/</small>
+                            <span th:text="${lecture.maxCapacity}">0</span>
+                        </strong>
+                        <em th:text="${lecture.participantCount > lecture.maxCapacity ? '초과' : (lecture.participantCount >= lecture.maxCapacity ? '마감' : '여유')}">
+                            여유
                         </em>
-                    </span>
-                    <strong th:text="${lecture.participantCount + ' / ' + lecture.maxCapacity}">0 / 0</strong>
+                    </div>
                 </div>
             </div>
         </div>

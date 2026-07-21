@@ -1,104 +1,91 @@
 package com.wemisson.career_camp.view;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.wemisson.career_camp.domain.participant.entity.ParticipantEntity;
-import com.wemisson.career_camp.domain.participant.entity.ParticipantLectureEntity;
-import com.wemisson.career_camp.domain.participant.entity.ParticipantTypeEntity;
-import com.wemisson.career_camp.domain.participant.repository.ParticipantLectureRepository;
-import com.wemisson.career_camp.domain.participant.repository.ParticipantRepository;
-import com.wemisson.career_camp.domain.participant.repository.ParticipantTypeRepository;
-import com.wemisson.career_camp.domain.recruitment.service.RecruitmentService;
-import com.wemisson.career_camp.domain.recruitment.dto.LectureType;
+import com.wemisson.career_camp.domain.admin.service.query.AdminRecruitmentQueryService;
+import com.wemisson.career_camp.domain.admin.service.query.AdminViewService;
+import com.wemisson.career_camp.domain.participant.dto.ParticipantLookupResult;
+import com.wemisson.career_camp.domain.participant.session.ParticipantSession;
+import com.wemisson.career_camp.domain.participant.service.command.ParticipantLookupService;
+import com.wemisson.career_camp.domain.participant.service.query.ParticipantRegistrationViewService;
+import com.wemisson.career_camp.domain.recruitment.service.query.RecruitmentQueryService;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentEntity;
-import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeEntity;
-import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeRepository;
-import com.wemisson.career_camp.domain.recruitment.service.LectureService;
+import com.wemisson.career_camp.domain.recruitment.service.query.LectureQueryService;
+import com.wemisson.career_camp.domain.participant.service.command.LectureApplicationService;
+import com.wemisson.career_camp.domain.participant.service.draft.DraftExitReleaseService;
+import com.wemisson.career_camp.domain.recruitment.dto.LectureType;
 import com.wemisson.career_camp.domain.participant.dto.ParticipantCreateRequest;
-import com.wemisson.career_camp.domain.admin.controller.AdminRecruitmentController;
-import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentRepository;
-import com.wemisson.career_camp.domain.recruitment.repository.LectureRepository;
-import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentChurchEntity;
-import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentChurchRepository;
+import com.wemisson.career_camp.domain.participant.entity.ParticipantLectureDraftEntity;
 
+import static com.wemisson.career_camp.domain.admin.controller.AdminAuthController.ADMIN_ID_SESSION_KEY;
 import static com.wemisson.career_camp.domain.admin.controller.AdminAuthController.ADMIN_NAME_SESSION_KEY;
-import static com.wemisson.career_camp.domain.admin.controller.AdminRecruitmentController.ADMIN_RETURN_URL_SESSION_KEY;
 
 import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @Controller
 @RequiredArgsConstructor
 public class ViewController {
 
-	private static final String REGISTRATION_REQUEST_SESSION_KEY = "registrationRequest";
-	private static final String PARTICIPANT_LECTURE_ID_SESSION_KEY = "participantLectureId";
-	private static final String EDITING_PARTICIPANT_ID_SESSION_KEY = "editingParticipantId";
-	private static final String RETURN_TO_LOOKUP_AFTER_EDIT_SESSION_KEY = "returnToLookupAfterEdit";
-	private static final String LOOKUP_PARTICIPANT_LECTURE_IDS_SESSION_KEY = "lookupParticipantLectureIds";
-	private static final String LOOKUP_PHONE_NUMBER_SESSION_KEY = "lookupPhoneNumber";
-	private static final String LOOKUP_PASSWORD_SESSION_KEY = "lookupPassword";
-
-	private final RecruitmentService recruitmentService;
-	private final LectureService lectureService;
-	private final ParticipantLectureRepository participantLectureRepository;
-	private final ParticipantRepository participantRepository;
-	private final ParticipantTypeRepository participantTypeRepository;
-	private final RecruitmentParticipantTypeRepository recruitmentParticipantTypeRepository;
-	private final RecruitmentRepository recruitmentRepository;
-	private final LectureRepository lectureRepository;
-	private final RecruitmentChurchRepository recruitmentChurchRepository;
-	private final AdminRecruitmentController adminRecruitmentController;
+	private final RecruitmentQueryService recruitmentService;
+	private final LectureQueryService lectureService;
+	private final LectureApplicationService lectureApplicationService;
+	private final ParticipantRegistrationViewService participantRegistrationViewService;
+	private final ParticipantLookupService participantLookupService;
+	private final AdminViewService adminViewService;
+	private final AdminRecruitmentQueryService adminRecruitmentQueryService;
+	private final ParticipantSession participantSession;
+	private final DraftExitReleaseService draftExitReleaseService;
 
 	@GetMapping("/home")
 	public String home(
 		Model model,
 		HttpSession session
 	) {
-		clearLookupSession(session);
-		RecruitmentEntity currentRecruitment = recruitmentService.findCurrentRecruitment()
+		clearRegistration(session);
+		participantSession.clearLookup(session);
+		RecruitmentEntity currentRecruitment = recruitmentService.findVisibleRecruitment()
 			.orElse(null);
 
 		model.addAttribute("recruitment", currentRecruitment);
-		model.addAttribute("recruitmentEntity", currentRecruitment);
 
 		return "home";
-	}
-
-	private void clearLookupSession(HttpSession session) {
-		session.removeAttribute(LOOKUP_PARTICIPANT_LECTURE_IDS_SESSION_KEY);
-		session.removeAttribute(LOOKUP_PHONE_NUMBER_SESSION_KEY);
-		session.removeAttribute(LOOKUP_PASSWORD_SESSION_KEY);
-		session.removeAttribute(RETURN_TO_LOOKUP_AFTER_EDIT_SESSION_KEY);
 	}
 
 	@GetMapping("/register")
 	public String register(
 		Model model,
-		HttpSession session
+		HttpSession session,
+		RedirectAttributes redirectAttributes
 	) {
-		session.removeAttribute(EDITING_PARTICIPANT_ID_SESSION_KEY);
-		session.removeAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY);
-		session.removeAttribute(REGISTRATION_REQUEST_SESSION_KEY);
+		ParticipantCreateRequest existingRequest = participantSession.registrationRequest(session);
 
-		model.addAttribute("request", ParticipantCreateRequest.createEmpty());
-		addRegisterAttributes(model, false);
+		if (participantSession.registrationRecruitmentId(session) == null && existingRequest == null) {
+			clearRegistration(session);
+		}
+		RecruitmentEntity recruitmentEntity = findRegistrationFlowRecruitment(session);
+
+		if (recruitmentEntity == null) {
+			redirectAttributes.addFlashAttribute("errorMessage", "현재 신청 가능한 모집이 없습니다.");
+
+			return "redirect:/home";
+		}
+
+		model.addAttribute(
+			"request",
+			existingRequest == null ? ParticipantCreateRequest.createEmpty() : existingRequest
+		);
+		model.addAttribute("adminReturnUrl", participantSession.adminReturnUrl(session));
+		addRegisterAttributes(model, false, recruitmentEntity);
 		return "register";
 	}
 
@@ -107,27 +94,26 @@ public class ViewController {
 		Model model,
 		HttpSession session
 	) {
-		Long editingParticipantId = (Long)session.getAttribute(
-			EDITING_PARTICIPANT_ID_SESSION_KEY
-		);
+		Long editingParticipantId = participantSession.editingParticipantId(session);
 
 		if (editingParticipantId == null) {
 			return "redirect:/lookup";
 		}
 
-		ParticipantEntity participantEntity = participantRepository.findById(editingParticipantId)
-			.orElseThrow(() -> new IllegalArgumentException("참가자 정보를 찾을 수 없습니다."));
+		ParticipantRegistrationViewService.ParticipantEditView editView = participantRegistrationViewService.findParticipantEditView(
+			editingParticipantId
+		);
 
-		model.addAttribute("request", toParticipantCreateRequest(participantEntity));
-		addRegisterAttributes(model, true);
-		model.addAttribute("adminReturnUrl", session.getAttribute(ADMIN_RETURN_URL_SESSION_KEY));
+		model.addAttribute("request", editView.request());
+		addRegisterAttributes(model, true, editView.recruitment());
+		model.addAttribute("adminReturnUrl", participantSession.adminReturnUrl(session));
 
 		return "register";
 	}
 
 	@GetMapping("/lectures")
 	public String lectures(Model model) {
-		RecruitmentEntity recruitmentEntity = recruitmentService.findCurrentRecruitment()
+		RecruitmentEntity recruitmentEntity = recruitmentService.findVisibleRecruitment()
 			.orElse(null);
 
 		if (recruitmentEntity == null) {
@@ -135,22 +121,69 @@ public class ViewController {
 		}
 
 		model.addAttribute("recruitment", recruitmentEntity);
-		model.addAttribute("recruitmentEntity", recruitmentEntity);
-		model.addAttribute(
-			"morningLectures",
-			lectureService.findOpenLectures(recruitmentEntity, LectureType.AM)
+		LectureQueryService.LectureSelection lectureSelection = lectureService.findLectures(
+			recruitmentEntity,
+			true,
+			true
 		);
-		model.addAttribute(
-			"afternoonLectures",
-			lectureService.findOpenLectures(recruitmentEntity, LectureType.PM)
-		);
+		model.addAttribute("morningLectures", lectureSelection.morningLectures());
+		model.addAttribute("afternoonLectures", lectureSelection.afternoonLectures());
 
 		return "lectures";
 	}
 
-	@GetMapping("/admin/login")
-	public String adminLogin() {
-		return "redirect:/home";
+	@GetMapping("/lookup")
+	public String lookupPage(
+		Model model,
+		HttpSession session
+	) {
+		ParticipantSession.LookupFlow lookupFlow = participantSession.lookupFlow(session);
+
+		if (!lookupFlow.hasCondition()) {
+			addLookupPageAttributes(model);
+			return "lookup";
+		}
+
+		return addLookupResults(
+			lookupFlow.name(),
+			lookupFlow.churchId(),
+			lookupFlow.phoneNumber(),
+			model,
+			session
+		);
+	}
+
+	@PostMapping("/lookup")
+	public String lookup(
+		@RequestParam String name,
+		@RequestParam Long churchId,
+		@RequestParam String phoneNumber,
+		Model model,
+		HttpSession session
+	) {
+		participantSession.saveLookupCondition(session, name, churchId, phoneNumber);
+
+		return addLookupResults(name, churchId, phoneNumber, model, session);
+	}
+
+	@GetMapping("/registration/complete")
+	public String registrationComplete(
+		Model model,
+		HttpSession session
+	) {
+		Long participantLectureId = participantSession.participantLectureId(session);
+
+		if (participantLectureId == null || participantSession.isLectureEditMode(session)) {
+			return "redirect:/lookup";
+		}
+
+		model.addAttribute(
+			"completeView",
+			participantLookupService.findRegistrationCompleteView(participantLectureId)
+		);
+		model.addAttribute("adminReturnUrl", participantSession.adminReturnUrl(session));
+
+		return "registration-complete";
 	}
 
 	@GetMapping("/admin/home")
@@ -158,417 +191,370 @@ public class ViewController {
 		Model model,
 		HttpSession session
 	) {
-		List<RecruitmentEntity> recruitments = recruitmentRepository.findAllByOrderByIdDesc();
-		Map<Long, Integer> participantCounts = recruitments.stream()
-			.collect(Collectors.toMap(
-				RecruitmentEntity::getId,
-				participantRepository::countByRecruitmentEntity
-			));
-
+		AdminViewService.AdminHomeView adminHomeView = adminViewService.findAdminHomeView();
 		String adminName = (String)session.getAttribute(ADMIN_NAME_SESSION_KEY);
 
 		model.addAttribute("adminName", adminName);
-		model.addAttribute("currentRecruitment", recruitments.stream()
-			.filter(RecruitmentEntity::isOpen)
-			.findFirst()
-			.orElse(null));
-		model.addAttribute("pastRecruitments", recruitments.stream()
-			.filter(recruitment -> !recruitment.isOpen())
-			.toList());
-		model.addAttribute("participantCounts", participantCounts);
-		model.addAttribute("totalRecruitmentCount", recruitments.size());
-		model.addAttribute("totalParticipantCount", participantCounts.values()
-			.stream()
-			.mapToInt(Integer::intValue)
-			.sum());
+		model.addAttribute("currentStatusDescription", adminHomeView.currentStatusDescription());
+		model.addAttribute("recruitmentGroups", adminHomeView.recruitmentGroups());
+		model.addAttribute("participantCounts", adminHomeView.participantCounts());
+		model.addAttribute("totalRecruitmentCount", adminHomeView.totalRecruitmentCount());
 
 		return "admin/home";
-	}
-
-	@PostMapping("/admin/recruitments")
-	public String createRecruitment(
-		@RequestParam String name,
-		@RequestParam String description,
-		@RequestParam String notice,
-		@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startAt,
-		@RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endAt,
-		RedirectAttributes redirectAttributes
-	) {
-		RecruitmentEntity recruitmentEntity = recruitmentRepository.save(
-			RecruitmentEntity.create(name, description, notice, startAt, endAt, false)
-		);
-		createParticipantTypeRules(recruitmentEntity);
-		redirectAttributes.addFlashAttribute("successMessage", "모집이 추가되었습니다.");
-
-		return "redirect:/admin/home";
-	}
-
-	@PostMapping("/admin/recruitments/{recruitmentId}/delete")
-	@org.springframework.transaction.annotation.Transactional
-	public String deleteRecruitment(
-		@PathVariable Long recruitmentId,
-		RedirectAttributes redirectAttributes
-	) {
-		RecruitmentEntity recruitmentEntity = recruitmentRepository.findById(recruitmentId)
-			.orElseThrow(() -> new IllegalArgumentException("모집을 찾을 수 없습니다."));
-
-		participantLectureRepository.deleteByParticipantEntityRecruitmentEntity(recruitmentEntity);
-		participantRepository.deleteByRecruitmentEntity(recruitmentEntity);
-		lectureRepository.deleteByRecruitmentEntity(recruitmentEntity);
-		recruitmentChurchRepository.deleteByRecruitmentEntity(recruitmentEntity);
-		recruitmentParticipantTypeRepository.deleteByRecruitmentEntity(recruitmentEntity);
-		recruitmentRepository.delete(recruitmentEntity);
-		redirectAttributes.addFlashAttribute("successMessage", "모집이 삭제되었습니다.");
-
-		return "redirect:/admin/home";
 	}
 
 	@GetMapping("/admin/recruitment-dashboard/{recruitmentId}")
 	public String adminRecruitmentDashboard(
 		@PathVariable Long recruitmentId,
 		@RequestParam(required = false) String phoneNumber,
-		Model model,
-		HttpSession session
+		Model model
 	) {
-		RecruitmentEntity recruitmentEntity = recruitmentRepository.findById(recruitmentId)
-			.orElseThrow(() -> new IllegalArgumentException("모집을 찾을 수 없습니다."));
-		int participantCount = participantRepository.countByRecruitmentEntity(recruitmentEntity);
-		int morningApplicationCount = participantLectureRepository.countMorningApplications(recruitmentEntity);
-		int afternoonApplicationCount = participantLectureRepository.countAfternoonApplications(recruitmentEntity);
+		AdminViewService.AdminRecruitmentDashboardView dashboardView = adminViewService
+			.findRecruitmentDashboardView(recruitmentId, phoneNumber);
 
-		model.addAttribute("adminName", session.getAttribute(ADMIN_NAME_SESSION_KEY));
-		model.addAttribute("recruitment", recruitmentEntity);
-		model.addAttribute("participantCount", participantCount);
-		model.addAttribute("morningApplicationCount", morningApplicationCount);
-		model.addAttribute("afternoonApplicationCount", afternoonApplicationCount);
-		model.addAttribute("lectureCount", lectureRepository.countByRecruitmentEntity(recruitmentEntity));
-		model.addAttribute("morningLectures", lectureService.findOpenLectures(recruitmentEntity, LectureType.AM));
-		model.addAttribute("afternoonLectures", lectureService.findOpenLectures(recruitmentEntity, LectureType.PM));
+		model.addAttribute("recruitment", dashboardView.recruitment());
+		model.addAttribute("nextRecruitmentStatusDescription", dashboardView.nextRecruitmentStatusDescription());
+		model.addAttribute("participantCount", dashboardView.participantCount());
+		model.addAttribute("morningApplicationCount", dashboardView.morningApplicationCount());
+		model.addAttribute("afternoonApplicationCount", dashboardView.afternoonApplicationCount());
+		model.addAttribute("lectureCount", dashboardView.lectureCount());
+		model.addAttribute("morningLectures", dashboardView.lectureSelection().morningLectures());
+		model.addAttribute("afternoonLectures", dashboardView.lectureSelection().afternoonLectures());
 		model.addAttribute("phoneNumber", phoneNumber);
-		model.addAttribute(
-			"quickResults",
-			adminRecruitmentController.searchParticipants(recruitmentEntity, phoneNumber)
-		);
+		model.addAttribute("quickResults", dashboardView.quickResults());
 
 		return "admin/recruitment-dashboard";
 	}
+
+	@GetMapping("/admin/recruitments/{recruitmentId}/participants")
+	public String adminParticipants(
+		@PathVariable Long recruitmentId,
+		@RequestParam(required = false, defaultValue = "all") String reportType,
+		@RequestParam(required = false, defaultValue = "AM") LectureType lectureType,
+		@RequestParam(required = false) Long lectureId,
+		@RequestParam(required = false) Long churchId,
+		@RequestParam(required = false, defaultValue = "0") int page,
+		@RequestParam(required = false, defaultValue = "50") int pageSize,
+		Model model
+	) {
+		AdminRecruitmentQueryService.ParticipantsView participantsView =
+			adminRecruitmentQueryService.findParticipantsView(
+				recruitmentId,
+				reportType,
+				lectureType,
+				lectureId,
+				churchId,
+				page,
+				pageSize
+			);
+
+		model.addAttribute("recruitment", participantsView.recruitment());
+		model.addAttribute("reportType", participantsView.reportType());
+		model.addAttribute("lectureType", participantsView.lectureType());
+		model.addAttribute("lectures", participantsView.lectures());
+		model.addAttribute("filteredLectures", participantsView.filteredLectures());
+		model.addAttribute("churches", participantsView.churches());
+		model.addAttribute("allParticipants", participantsView.allParticipants());
+		model.addAttribute("allParticipantPage", participantsView.allParticipantPage());
+		model.addAttribute("currentPage", participantsView.currentPage());
+		model.addAttribute("pageSize", participantsView.pageSize());
+		model.addAttribute("pageNumbers", participantsView.pageNumbers());
+		model.addAttribute("selectedLecture", participantsView.selectedLecture());
+		model.addAttribute("selectedChurch", participantsView.selectedChurch());
+		model.addAttribute("selectedLectureApplications", participantsView.selectedLectureApplications());
+		model.addAttribute("selectedChurchParticipants", participantsView.selectedChurchParticipants());
+		model.addAttribute("churchParticipantLectures", participantsView.churchParticipantLectures());
+		model.addAttribute("lectureCounts", participantsView.lectureCounts());
+		model.addAttribute("churchCounts", participantsView.churchCounts());
+		model.addAttribute("currentParticipantsUrl", participantsView.currentParticipantsUrl());
+
+		return "admin/participants";
+	}
+
+	@GetMapping("/admin/recruitments/{recruitmentId}/settings")
+	public String adminSettings(
+		@PathVariable Long recruitmentId,
+		Model model
+	) {
+		AdminRecruitmentQueryService.SettingsView settingsView = adminRecruitmentQueryService
+			.findSettingsView(recruitmentId);
+
+		model.addAttribute("recruitment", settingsView.recruitment());
+		model.addAttribute("lectures", settingsView.lectures());
+		model.addAttribute("churches", settingsView.churches());
+		model.addAttribute("participantTypeRules", settingsView.participantTypeRules());
+
+		return "admin/settings";
+	}
+
 	@GetMapping("/lecture")
 	public String lecture(
 		HttpSession session,
 		Model model
 	) {
-		ParticipantCreateRequest request = (ParticipantCreateRequest)session.getAttribute(
-			REGISTRATION_REQUEST_SESSION_KEY
-		);
+		ParticipantCreateRequest request = participantSession.registrationRequest(session);
+		draftExitReleaseService.cancelRelease(participantSession.draftToken(session));
 
 		if (request == null) {
 			return "redirect:/register";
 		}
+		if (
+			participantSession.participantLectureId(session) != null
+				&& !participantSession.isLectureEditMode(session)
+		) {
+			return "redirect:/registration/complete";
+		}
 
-		RecruitmentEntity recruitmentEntity = recruitmentService.findCurrentRecruitment()
-			.orElse(null);
+		RecruitmentEntity recruitmentEntity = findLectureFlowRecruitment(session);
 
 		if (recruitmentEntity == null) {
 			return "redirect:/home";
 		}
 
-		RecruitmentParticipantTypeEntity participantTypeRule = findParticipantTypeRule(
-			recruitmentEntity,
-			request.participantTypeId()
-		);
-
-		boolean canSelectMorningLecture = participantTypeRule.canSelectMorningLecture();
-		boolean canSelectAfternoonLecture = participantTypeRule.canSelectAfternoonLecture();
+		RegistrationContext registrationContext = createRegistrationContext(recruitmentEntity, request);
+		boolean canSelectMorningLecture = registrationContext.canSelectMorningLecture();
+		boolean canSelectAfternoonLecture = registrationContext.canSelectAfternoonLecture();
 
 		if (!canSelectMorningLecture && !canSelectAfternoonLecture) {
-			session.removeAttribute(REGISTRATION_REQUEST_SESSION_KEY);
+			participantSession.clearRegistration(session);
 
 			return "redirect:/register";
 		}
 
-		model.addAttribute("participantType", participantTypeRule.getParticipantTypeEntity().getType());
 		model.addAttribute("recruitment", recruitmentEntity);
 		addRecruitmentNoticeLines(model, recruitmentEntity);
 		model.addAttribute("canSelectMorningLecture", canSelectMorningLecture);
 		model.addAttribute("canSelectAfternoonLecture", canSelectAfternoonLecture);
-		model.addAttribute("adminReturnUrl", session.getAttribute(ADMIN_RETURN_URL_SESSION_KEY));
-		model.addAttribute("morningLectures", canSelectMorningLecture
-			? lectureService.findOpenLectures(recruitmentEntity, LectureType.AM)
-			: List.of());
-		model.addAttribute("afternoonLectures", canSelectAfternoonLecture
-			? lectureService.findOpenLectures(recruitmentEntity, LectureType.PM)
-			: List.of());
+		model.addAttribute("adminReturnUrl", participantSession.adminReturnUrl(session));
+		model.addAttribute("adminLectureMode", isAdmin(session));
+		LectureQueryService.LectureSelection lectureSelection = lectureService.findLectures(
+			recruitmentEntity,
+			canSelectMorningLecture,
+			canSelectAfternoonLecture
+		);
+		model.addAttribute("morningLectures", lectureSelection.morningLectures());
+		model.addAttribute("afternoonLectures", lectureSelection.afternoonLectures());
 		addAppliedLectureIds(session, model);
+		String draftToken = participantSession.getOrCreateDraftToken(session);
+		addDraftLectureIds(draftToken, model);
+		model.addAttribute(
+			"readyToFinalize",
+				lectureApplicationService.isReadyToFinalize(
+					request,
+					participantSession.participantLectureId(session),
+					recruitmentEntity.getId(),
+					draftToken
+			)
+		);
 		model.addAttribute(
 			"editLectureMode",
-			session.getAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY) != null
+			participantSession.isLectureEditMode(session)
 		);
 
 		return "lecture";
 	}
 
-	@PostMapping("/lecture")
-	public String saveRegistrationToSession(
-		@Valid @ModelAttribute("request") ParticipantCreateRequest request,
-		BindingResult bindingResult,
-		@RequestParam(required = false, defaultValue = "false") boolean confirmAdditional,
-		Model model,
-		HttpSession session
-	) {
-		if (bindingResult.hasErrors()) {
-			addRegisterAttributes(model, false);
-			return "register";
-		}
-
-		int existingParticipantCount = participantRepository.countByPhoneNumber(request.phoneNumber());
-
-		if (existingParticipantCount > 0 && !confirmAdditional) {
-			if (!participantRepository.existsByPhoneNumberAndPassword(
-				request.phoneNumber(),
-				request.password()
-			)) {
-				addDuplicateApplicationAttributes(
-					model,
-					existingParticipantCount,
-					false,
-					"추가 신청을 위해서 기존의 핀번호를 입력해주세요."
-				);
-
-				return "register";
-			}
-
-			addDuplicateApplicationAttributes(model, existingParticipantCount, true, null);
-
-			return "register";
-		}
-
-		if (existingParticipantCount > 0) {
-			if (!participantRepository.existsByPhoneNumberAndPassword(
-				request.phoneNumber(),
-				request.password()
-			)) {
-				addDuplicateApplicationAttributes(
-					model,
-					existingParticipantCount,
-					false,
-					"추가 신청을 위해서 기존의 핀번호를 입력해주세요."
-				);
-
-				return "register";
-			}
-		}
-
-		session.removeAttribute(PARTICIPANT_LECTURE_ID_SESSION_KEY);
-		session.setAttribute(REGISTRATION_REQUEST_SESSION_KEY, request);
-
-		return "redirect:/lecture";
-	}
-
-	@PostMapping("/register/edit")
-	public String updateParticipant(
-		@Valid @ModelAttribute("request") ParticipantCreateRequest request,
-		BindingResult bindingResult,
-		Model model,
-		HttpSession session
-	) {
-		if (bindingResult.hasErrors()) {
-			addRegisterAttributes(model, true);
-
-			return "register";
-		}
-
-		Long editingParticipantId = (Long)session.getAttribute(
-			EDITING_PARTICIPANT_ID_SESSION_KEY
-		);
-
-		if (editingParticipantId == null) {
-			return "redirect:/lookup";
-		}
-
-		ParticipantEntity participantEntity = participantRepository.findById(editingParticipantId)
-			.orElseThrow(() -> new IllegalArgumentException("참가자 정보를 찾을 수 없습니다."));
-
-		participantEntity.update(
-			request.name(),
-			findParticipantType(request.participantTypeId()),
-			findRecruitmentChurch(request.churchId(), participantEntity.getRecruitmentEntity()),
-			request.phoneNumber(),
-			request.password()
-		);
-		participantRepository.save(participantEntity);
-
-		session.removeAttribute(EDITING_PARTICIPANT_ID_SESSION_KEY);
-		session.setAttribute(REGISTRATION_REQUEST_SESSION_KEY, request);
-
-		String adminReturnUrl = (String)session.getAttribute(ADMIN_RETURN_URL_SESSION_KEY);
-		if (adminReturnUrl != null) {
-			session.removeAttribute(ADMIN_RETURN_URL_SESSION_KEY);
-			return "redirect:" + adminReturnUrl;
-		}
-
-		if (Boolean.TRUE.equals(session.getAttribute(RETURN_TO_LOOKUP_AFTER_EDIT_SESSION_KEY))) {
-			session.removeAttribute(RETURN_TO_LOOKUP_AFTER_EDIT_SESSION_KEY);
-			return "redirect:/lookup";
-		}
-
-		return "redirect:/lecture";
-	}
-
-	private void addDuplicateApplicationAttributes(
-		Model model,
-		int existingParticipantCount,
-		boolean duplicateApplicationPinVerified,
-		String duplicateApplicationErrorMessage
-	) {
-		addRegisterAttributes(model, false);
-		model.addAttribute("duplicateApplicationExists", true);
-		model.addAttribute("existingParticipantCount", existingParticipantCount);
-		model.addAttribute("duplicateApplicationPinVerified", duplicateApplicationPinVerified);
-		model.addAttribute(
-			"duplicateApplicationErrorMessage",
-			duplicateApplicationErrorMessage
-		);
-	}
-
 	private void addAppliedLectureIds(HttpSession session, Model model) {
-		Long participantLectureId = (Long)session.getAttribute(
-			PARTICIPANT_LECTURE_ID_SESSION_KEY
+		ParticipantRegistrationViewService.SelectedLectureIds selectedLectureIds =
+			participantRegistrationViewService.findSelectedLectureIds(
+				participantSession.participantLectureId(session)
+			);
+
+		if (selectedLectureIds.morningLectureId() != null) {
+			model.addAttribute("selectedMorningLectureId", selectedLectureIds.morningLectureId());
+		}
+		if (selectedLectureIds.afternoonLectureId() != null) {
+			model.addAttribute("selectedAfternoonLectureId", selectedLectureIds.afternoonLectureId());
+		}
+	}
+
+	private void addDraftLectureIds(String draftToken, Model model) {
+		List<ParticipantLectureDraftEntity> activeDrafts = lectureApplicationService.findActiveDrafts(draftToken);
+
+		model.addAttribute("hasDraftSelection", !activeDrafts.isEmpty());
+		model.addAttribute(
+			"draftExpiresAt",
+			activeDrafts.stream()
+				.map(ParticipantLectureDraftEntity::getExpiresAt)
+				.min(LocalDateTime::compareTo)
+				.orElse(null)
 		);
 
-		if (participantLectureId == null) {
-			return;
+		activeDrafts.forEach(draft -> {
+			if (draft.getLectureType() == LectureType.AM) {
+				model.addAttribute("selectedMorningLectureId", draft.getLectureEntity().getId());
+				model.addAttribute("draftMorningLectureId", draft.getLectureEntity().getId());
+				model.addAttribute("draftMorningExpiresAt", draft.getExpiresAt());
+				return;
+			}
+
+			model.addAttribute("selectedAfternoonLectureId", draft.getLectureEntity().getId());
+			model.addAttribute("draftAfternoonLectureId", draft.getLectureEntity().getId());
+			model.addAttribute("draftAfternoonExpiresAt", draft.getExpiresAt());
+		});
+	}
+
+	private RecruitmentEntity findLectureFlowRecruitment(HttpSession session) {
+		if (participantSession.isLectureEditMode(session)) {
+			Long participantLectureId = participantSession.participantLectureId(session);
+
+			if (participantLectureId == null) {
+				return null;
+			}
+
+			return participantRegistrationViewService.findRecruitmentForParticipantLecture(participantLectureId);
 		}
 
-		participantLectureRepository.findById(participantLectureId)
-			.ifPresent(participantLecture -> {
-				model.addAttribute(
-					"selectedMorningLectureId",
-					getMorningLectureId(participantLecture)
-				);
-				model.addAttribute(
-					"selectedAfternoonLectureId",
-					getAfternoonLectureId(participantLecture)
-				);
-			});
+		return findRegistrationFlowRecruitment(session);
 	}
 
-	private Long getMorningLectureId(ParticipantLectureEntity participantLectureEntity) {
-		if (participantLectureEntity.getMorningLectureEntity() == null) {
-			return null;
+	private RecruitmentEntity findRegistrationFlowRecruitment(HttpSession session) {
+		Long registrationRecruitmentId = participantSession.registrationRecruitmentId(session);
+
+		if (registrationRecruitmentId != null) {
+			return recruitmentService.findRecruitment(registrationRecruitmentId);
 		}
 
-		return participantLectureEntity.getMorningLectureEntity().getId();
-	}
-
-	private Long getAfternoonLectureId(ParticipantLectureEntity participantLectureEntity) {
-		if (participantLectureEntity.getAfternoonLectureEntity() == null) {
-			return null;
-		}
-
-		return participantLectureEntity.getAfternoonLectureEntity().getId();
-	}
-
-	private ParticipantCreateRequest toParticipantCreateRequest(ParticipantEntity participantEntity) {
-		return new ParticipantCreateRequest(
-			participantEntity.getName(),
-			participantEntity.getType().getId(),
-			participantEntity.getRecruitmentChurchEntity().getId(),
-			participantEntity.getPhoneNumber(),
-			participantEntity.getPassword()
-		);
-	}
-
-	private void addRegisterAttributes(Model model, boolean editMode) {
-		model.addAttribute("editMode", editMode);
-		RecruitmentEntity recruitmentEntity = recruitmentService.findCurrentRecruitment().orElse(null);
-
-		model.addAttribute("recruitment", recruitmentEntity);
-		addRecruitmentNoticeLines(model, recruitmentEntity);
-		model.addAttribute("participantTypes", findSelectableParticipantTypes());
-		model.addAttribute("churches", findSelectableChurches(recruitmentEntity));
-	}
-
-	private List<ParticipantTypeEntity> findSelectableParticipantTypes() {
 		return recruitmentService.findCurrentRecruitment()
-			.map(recruitment -> recruitmentParticipantTypeRepository.findByRecruitmentEntityOrderByIdAsc(recruitment)
-				.stream()
-				.filter(recruitmentParticipantTypeEntity ->
-					recruitmentParticipantTypeEntity.canSelectMorningLecture()
-						|| recruitmentParticipantTypeEntity.canSelectAfternoonLecture()
-				)
-				.map(RecruitmentParticipantTypeEntity::getParticipantTypeEntity)
-				.toList())
-			.filter(participantTypes -> !participantTypes.isEmpty())
-			.orElseGet(participantTypeRepository::findAll);
+			.orElse(null);
 	}
 
-	private RecruitmentParticipantTypeEntity findParticipantTypeRule(
-		RecruitmentEntity recruitmentEntity,
-		Long participantTypeId
+	private String addLookupResults(
+		String name,
+		Long churchId,
+		String phoneNumber,
+		Model model,
+		HttpSession session
 	) {
-		return recruitmentParticipantTypeRepository
-			.findByRecruitmentEntityAndParticipantTypeEntityId(recruitmentEntity, participantTypeId)
-			.orElseThrow(() -> new IllegalArgumentException("현재 모집에서 신청할 수 없는 참가자 유형입니다."));
-	}
+		RecruitmentEntity recruitmentEntity = recruitmentService.findVisibleRecruitment()
+			.orElse(null);
 
-	private ParticipantTypeEntity findParticipantType(Long participantTypeId) {
-		return participantTypeRepository.findById(participantTypeId)
-			.orElseThrow(() -> new IllegalArgumentException("참가자 유형을 찾을 수 없습니다."));
-	}
+		addLookupPageAttributes(model, recruitmentEntity);
+		if (name == null || name.isBlank() || !phoneNumber.matches("\\d{10,11}")) {
+			model.addAttribute("name", name);
+			model.addAttribute("churchId", churchId);
+			model.addAttribute("phoneNumber", phoneNumber);
+			model.addAttribute("searched", true);
+			model.addAttribute("results", List.of());
+			model.addAttribute(
+				"lookupErrorMessage",
+				"이름과 10~11자리 전화번호를 입력해주세요."
+			);
 
-	private List<RecruitmentChurchEntity> findSelectableChurches(RecruitmentEntity recruitmentEntity) {
-		if (recruitmentEntity == null) {
-			return List.of();
+			return "lookup";
 		}
 
-		return recruitmentChurchRepository.findByRecruitmentEntityOrderBySortOrderAscIdAsc(recruitmentEntity);
+		if (recruitmentEntity == null) {
+			model.addAttribute("name", name);
+			model.addAttribute("churchId", churchId);
+			model.addAttribute("phoneNumber", phoneNumber);
+			model.addAttribute("searched", true);
+			model.addAttribute("results", List.of());
+			model.addAttribute("lookupErrorMessage", "조회 가능한 모집이 없습니다.");
+
+			return "lookup";
+		}
+
+		if (!recruitmentService.isSelectableChurch(recruitmentEntity, churchId)) {
+			model.addAttribute("name", name);
+			model.addAttribute("churchId", churchId);
+			model.addAttribute("phoneNumber", phoneNumber);
+			model.addAttribute("searched", true);
+			model.addAttribute("results", List.of());
+			model.addAttribute("lookupErrorMessage", "선택한 교회를 찾을 수 없습니다.");
+
+			return "lookup";
+		}
+
+		List<ParticipantLookupResult> results = participantLookupService.lookup(
+			recruitmentEntity,
+			name.strip(),
+			churchId,
+			phoneNumber
+		);
+
+		model.addAttribute("name", name);
+		model.addAttribute("churchId", churchId);
+		model.addAttribute("phoneNumber", phoneNumber);
+		model.addAttribute("results", results);
+		model.addAttribute("searched", true);
+		participantSession.saveLookupResultIds(
+			session,
+			results.stream()
+				.map(ParticipantLookupResult::participantLectureId)
+				.toList()
+		);
+
+		return "lookup";
+	}
+
+	private void addLookupPageAttributes(Model model) {
+		RecruitmentEntity recruitmentEntity = recruitmentService.findVisibleRecruitment()
+			.orElse(null);
+
+		addLookupPageAttributes(model, recruitmentEntity);
+	}
+
+	private void addLookupPageAttributes(
+		Model model,
+		RecruitmentEntity recruitmentEntity
+	) {
+		model.addAttribute(
+			"churches",
+			recruitmentEntity == null ? List.of() : recruitmentService.findChurches(recruitmentEntity)
+		);
+	}
+
+	private RegistrationContext createRegistrationContext(
+		RecruitmentEntity recruitmentEntity,
+		ParticipantCreateRequest request
+	) {
+		RecruitmentQueryService.ParticipantTypeRule participantTypeRule = recruitmentService.findParticipantTypeRule(
+			recruitmentEntity,
+			request.participantTypeId()
+		);
+
+		return new RegistrationContext(
+			participantTypeRule.canSelectMorningLecture(),
+			participantTypeRule.canSelectAfternoonLecture()
+		);
+	}
+
+	private record RegistrationContext(
+		boolean canSelectMorningLecture,
+		boolean canSelectAfternoonLecture
+	) {
+	}
+
+	private void addRegisterAttributes(
+		Model model,
+		boolean editMode,
+		RecruitmentEntity recruitmentEntity
+	) {
+		List<?> participantTypes = participantRegistrationViewService.findSelectableParticipantTypes(recruitmentEntity);
+		List<?> churches = participantRegistrationViewService.findSelectableChurches(recruitmentEntity);
+
+		model.addAttribute("editMode", editMode);
+		addRecruitmentNoticeLines(model, recruitmentEntity);
+		model.addAttribute("participantTypes", participantTypes);
+		model.addAttribute("churches", churches);
+		model.addAttribute("canSubmitRegistration", !participantTypes.isEmpty() && !churches.isEmpty());
 	}
 
 	private void addRecruitmentNoticeLines(Model model, RecruitmentEntity recruitmentEntity) {
-		if (recruitmentEntity == null) {
-			model.addAttribute("recruitmentNoticeLines", List.of("현재 신청 가능한 모집이 없습니다."));
-			return;
-		}
-
 		model.addAttribute(
 			"recruitmentNoticeLines",
-			Arrays.stream(normalizeNotice(recruitmentEntity.getNotice()).split("\n", -1))
-				.map(String::stripLeading)
-				.toList()
+			recruitmentService.findNoticeLines(recruitmentEntity)
 		);
 	}
 
-	private String normalizeNotice(String notice) {
-		if (notice == null) {
-			return "";
-		}
-
-		return notice
-			.replace("\\r\\n", "\n")
-			.replace("\\n", "\n")
-			.replace("\r\n", "\n")
-			.replace("\r", "\n");
+	private void clearRegistration(HttpSession session) {
+		lectureApplicationService.releaseDrafts(participantSession.draftToken(session));
+		participantSession.clearRegistration(session);
 	}
 
-	private RecruitmentChurchEntity findRecruitmentChurch(
-		Long churchId,
-		RecruitmentEntity recruitmentEntity
-	) {
-		return recruitmentChurchRepository.findByIdAndRecruitmentEntity(churchId, recruitmentEntity)
-			.orElseThrow(() -> new IllegalArgumentException("현재 모집에서 선택할 수 없는 교회입니다."));
+	private boolean isAdmin(HttpSession session) {
+		return session.getAttribute(ADMIN_ID_SESSION_KEY) != null;
 	}
 
-	private void createParticipantTypeRules(RecruitmentEntity recruitmentEntity) {
-		participantTypeRepository.findAll()
-			.forEach(participantType -> {
-				recruitmentParticipantTypeRepository.save(
-					RecruitmentParticipantTypeEntity.create(
-						recruitmentEntity,
-						participantType,
-						false,
-						false
-					)
-				);
-			});
-	}
 }

@@ -53,15 +53,15 @@ public class ParticipantLectureEntity {
 		return participantLectureEntity;
 	}
 
-	public void apply(LectureEntity lectureEntity) {
+	public void apply(LectureEntity lectureEntity, LocalDateTime appliedAt) {
 		if (lectureEntity.getType() == LectureType.AM) {
 			this.morningLectureEntity = lectureEntity;
-			this.morningLectureApplyAt = LocalDateTime.now();
+			this.morningLectureApplyAt = appliedAt;
 			return;
 		}
 
 		this.afternoonLectureEntity = lectureEntity;
-		this.afternoonLectureApplyAt = LocalDateTime.now();
+		this.afternoonLectureApplyAt = appliedAt;
 	}
 
 	public LectureEntity getAppliedLecture(LectureType lectureType) {

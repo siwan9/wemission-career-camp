@@ -13,14 +13,10 @@ public record ParticipantCreateRequest(
 	Long churchId,
 	@NotBlank
 	@Pattern(regexp = "\\d{10,11}")
-	String phoneNumber,
-	@NotBlank
-	@Pattern(regexp = "\\d{6}")
-	String password
+	String phoneNumber
 ) {
 	public static ParticipantCreateRequest createEmpty() {
 		return new ParticipantCreateRequest(
-			null,
 			null,
 			null,
 			null,

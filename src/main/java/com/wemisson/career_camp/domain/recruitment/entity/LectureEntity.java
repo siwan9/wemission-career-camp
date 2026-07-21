@@ -1,5 +1,7 @@
 package com.wemisson.career_camp.domain.recruitment.entity;
 
+import org.hibernate.annotations.DynamicUpdate;
+
 import com.wemisson.career_camp.domain.recruitment.dto.LectureType;
 
 import jakarta.persistence.Column;
@@ -19,6 +21,7 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "lectures")
+@DynamicUpdate
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 public class LectureEntity {

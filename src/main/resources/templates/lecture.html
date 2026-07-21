@@ -9,7 +9,7 @@
 
     <title>2026 위미션 진로캠프 - 특강 선택</title>
     <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+        th:href="@{/vendor/bootstrap/bootstrap.min.css}"
         rel="stylesheet">
 
     <link
@@ -26,7 +26,7 @@
     <div class="registration-card">
         <div class="text-center mb-4">
             <img
-                src="/images/wemission.png"
+                th:src="@{/images/wemission.png}"
                 class="logo img-fluid mb-3">
 
             <div class="badge bg-primary fs-6 mb-3">
@@ -74,6 +74,26 @@
         </div>
 
         <div
+            class="lecture-draft-panel"
+            th:classappend="${hasDraftSelection == true ? '' : ' d-none'}"
+            data-draft-panel
+            th:attr="data-can-select-am=${canSelectMorningLecture},data-can-select-pm=${canSelectAfternoonLecture},data-draft-expires-at=${draftExpiresAt},data-edit-lecture-mode=${editLectureMode},data-admin-lecture-mode=${adminLectureMode}">
+            <div class="lecture-draft-panel-main">
+                <div class="lecture-draft-panel-title">
+                    임시 선택 중
+                </div>
+                <div
+                    class="lecture-draft-panel-message"
+                    data-draft-message
+                    th:text="${editLectureMode == true
+                        ? '수정 중에는 기존 신청이 유지됩니다. 변경하려면 반드시 최종 신청을 눌러주세요.'
+                        : '선택만으로는 신청이 완료되지 않습니다. 반드시 최종 신청을 눌러주세요.'}">
+                    선택만으로는 신청이 완료되지 않습니다. 반드시 최종 신청을 눌러주세요.
+                </div>
+            </div>
+        </div>
+
+        <div
             th:if="${canSelectMorningLecture == true}">
 
             <div class="section-header">
@@ -96,7 +116,7 @@
                     <div
                         class="card lectureEntity-card h-100"
                         th:classappend="${(selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id ? ' lectureEntity-card-selected' : '') + (!lectureEntity.open ? ' lectureEntity-card-pending' : '')}"
-                        th:attr="data-lecture-id=${lectureEntity.id},data-lecture-type='AM',data-remaining-capacity=${lectureEntity.remainingCapacity},data-full=${lectureEntity.full},data-open=${lectureEntity.open}">
+                        th:attr="data-lecture-id=${lectureEntity.id},data-lecture-type='AM',data-remaining-capacity=${lectureEntity.remainingCapacity},data-full=${lectureEntity.full},data-open=${lectureEntity.open},data-confirmed-selected=${selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id and (draftMorningLectureId == null or draftMorningLectureId != lectureEntity.id)}">
                         <div class="card-body">
                             <div
                                 class="selected-lectureEntity-badge mb-3"
@@ -128,23 +148,40 @@
                             <span
                                 class="badge bg-secondary"
 
-                                th:text="${'남은 자리 ' + (lectureEntity.open ? lectureEntity.remainingCapacity : 0) + '명'}">
+                                th:text="${'남은 자리 ' + (adminLectureMode == true ? lectureEntity.remainingCapacity : (lectureEntity.open ? lectureEntity.userVisibleRemainingCapacity : 0)) + '명'}">
                             </span>
 
                             <div
                                 class="mt-4 lectureEntity-action-area"
-                                th:if="${selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id}">
-                                <form
-                                    th:action="@{/lectures/cancel}"
-                                    method="post">
-                                    <input
-                                        type="hidden"
-                                        name="lectureId"
+                                th:if="${draftMorningLectureId != null and draftMorningLectureId == lectureEntity.id}">
+	                                <form
+	                                    th:action="@{/lectures/cancel}"
+	                                    method="post">
+	                                    <div class="lecture-card-draft-timer">
+	                                        <span>오전 점유 남은 시간</span>
+	                                        <strong
+	                                            data-card-draft-countdown
+	                                            data-lecture-type="AM"
+	                                            th:attr="data-expires-at=${draftMorningExpiresAt}">--:--</strong>
+	                                    </div>
+	                                    <input
+	                                        type="hidden"
+	                                        name="lectureId"
                                         th:value="${lectureEntity.id}">
                                     <button class="btn lectureEntity-btn lectureEntity-btn-cancel w-100">
-                                        신청 취소
+                                        선택 해제
                                     </button>
                                 </form>
+                            </div>
+
+                            <div
+                                class="mt-4 lectureEntity-action-area"
+                                th:if="${selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id and (draftMorningLectureId == null or draftMorningLectureId != lectureEntity.id)}">
+                                <button
+                                    class="btn lectureEntity-btn lectureEntity-btn-muted w-100"
+                                    disabled>
+                                    현재 신청
+                                </button>
                             </div>
 
                             <div
@@ -159,12 +196,12 @@
                                         th:value="${lectureEntity.id}">
                                     <button
                                         class="btn lectureEntity-btn lectureEntity-btn-apply w-100"
-                                        th:classappend="${selectedMorningLectureId != null or !lectureEntity.open ? ' lectureEntity-btn-muted' : ''}"
-                                        th:disabled="${!lectureEntity.open or lectureEntity.full or selectedMorningLectureId != null}"
+                                        th:classappend="${((!lectureEntity.open and adminLectureMode != true) or (lectureEntity.full and adminLectureMode != true) or draftMorningLectureId != null) ? ' lectureEntity-btn-muted' : ''}"
+                                        th:disabled="${(!lectureEntity.open and adminLectureMode != true) or (lectureEntity.full and adminLectureMode != true) or draftMorningLectureId != null}"
                                         th:text="${selectedMorningLectureId != null and selectedMorningLectureId == lectureEntity.id
                                             ? '선택한 특강'
-                                            : (!lectureEntity.open ? '준비중' : (selectedMorningLectureId != null ? '이미 선택한 시간대입니다' : (lectureEntity.full ? '마감' : '신청하기')))}">
-                                        신청하기
+                                            : ((!lectureEntity.open and adminLectureMode != true) ? '준비중' : (draftMorningLectureId != null ? '선택 해제 후 변경' : ((lectureEntity.full and adminLectureMode != true) ? '마감' : '선택하기')))}">
+                                        선택하기
                                     </button>
                                 </form>
                             </div>
@@ -197,7 +234,7 @@
                 <div
                     class="card lectureEntity-card h-100"
                     th:classappend="${(selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id ? ' lectureEntity-card-selected' : '') + (!lectureEntity.open ? ' lectureEntity-card-pending' : '')}"
-                    th:attr="data-lecture-id=${lectureEntity.id},data-lecture-type='PM',data-remaining-capacity=${lectureEntity.remainingCapacity},data-full=${lectureEntity.full},data-open=${lectureEntity.open}">
+                    th:attr="data-lecture-id=${lectureEntity.id},data-lecture-type='PM',data-remaining-capacity=${lectureEntity.remainingCapacity},data-full=${lectureEntity.full},data-open=${lectureEntity.open},data-confirmed-selected=${selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id and (draftAfternoonLectureId == null or draftAfternoonLectureId != lectureEntity.id)}">
                     <div class="card-body">
                         <div
                             class="selected-lectureEntity-badge mb-3"
@@ -229,23 +266,40 @@
                         <span
                             class="badge bg-secondary"
 
-                            th:text="${'남은 자리 ' + (lectureEntity.open ? lectureEntity.remainingCapacity : 0) + '명'}">
+                            th:text="${'남은 자리 ' + (adminLectureMode == true ? lectureEntity.remainingCapacity : (lectureEntity.open ? lectureEntity.userVisibleRemainingCapacity : 0)) + '명'}">
                         </span>
 
                         <div
                             class="mt-4 lectureEntity-action-area"
-                            th:if="${selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id}">
-                            <form
-                                th:action="@{/lectures/cancel}"
-                                method="post">
-                                <input
-                                    type="hidden"
-                                    name="lectureId"
+                            th:if="${draftAfternoonLectureId != null and draftAfternoonLectureId == lectureEntity.id}">
+	                            <form
+	                                th:action="@{/lectures/cancel}"
+	                                method="post">
+	                                <div class="lecture-card-draft-timer">
+	                                    <span>오후 점유 남은 시간</span>
+	                                    <strong
+	                                        data-card-draft-countdown
+	                                        data-lecture-type="PM"
+	                                        th:attr="data-expires-at=${draftAfternoonExpiresAt}">--:--</strong>
+	                                </div>
+	                                <input
+	                                    type="hidden"
+	                                    name="lectureId"
                                     th:value="${lectureEntity.id}">
                                 <button class="btn lectureEntity-btn lectureEntity-btn-cancel w-100">
-                                    신청 취소
+                                    선택 해제
                                 </button>
                             </form>
+                        </div>
+
+                        <div
+                            class="mt-4 lectureEntity-action-area"
+                            th:if="${selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id and (draftAfternoonLectureId == null or draftAfternoonLectureId != lectureEntity.id)}">
+                            <button
+                                class="btn lectureEntity-btn lectureEntity-btn-muted w-100"
+                                disabled>
+                                현재 신청
+                            </button>
                         </div>
 
                         <div
@@ -260,12 +314,12 @@
                                     th:value="${lectureEntity.id}">
                                 <button
                                     class="btn lectureEntity-btn lectureEntity-btn-apply w-100"
-                                    th:classappend="${selectedAfternoonLectureId != null or !lectureEntity.open ? ' lectureEntity-btn-muted' : ''}"
-                                    th:disabled="${!lectureEntity.open or lectureEntity.full or selectedAfternoonLectureId != null}"
+                                    th:classappend="${((!lectureEntity.open and adminLectureMode != true) or (lectureEntity.full and adminLectureMode != true) or draftAfternoonLectureId != null) ? ' lectureEntity-btn-muted' : ''}"
+                                    th:disabled="${(!lectureEntity.open and adminLectureMode != true) or (lectureEntity.full and adminLectureMode != true) or draftAfternoonLectureId != null}"
                                     th:text="${selectedAfternoonLectureId != null and selectedAfternoonLectureId == lectureEntity.id
                                         ? '선택한 특강'
-                                        : (!lectureEntity.open ? '준비중' : (selectedAfternoonLectureId != null ? '이미 선택한 시간대입니다' : (lectureEntity.full ? '마감' : '신청하기')))}">
-                                    신청하기
+                                        : ((!lectureEntity.open and adminLectureMode != true) ? '준비중' : (draftAfternoonLectureId != null ? '선택 해제 후 변경' : ((lectureEntity.full and adminLectureMode != true) ? '마감' : '선택하기')))}">
+                                    선택하기
                                 </button>
                             </form>
                         </div>
@@ -275,12 +329,40 @@
         </div>
 
         <div class="mt-4">
-            <a
-                th:if="${editLectureMode != true}"
-                href="/home"
-                class="btn home-link-button w-100">
-                홈으로 가기
-            </a>
+            <form
+                th:action="@{/lectures/finalize}"
+                method="post"
+                class="mb-3"
+                data-finalize-form>
+	                <button
+	                    class="btn lectureEntity-btn lectureEntity-btn-apply finalize-button w-100"
+	                    th:disabled="${readyToFinalize != true}"
+	                    th:classappend="${readyToFinalize == true ? ' finalize-button-ready' : ' lectureEntity-btn-muted finalize-button-disabled'}"
+	                    data-finalize-button
+	                    th:text="${readyToFinalize == true ? '최종 신청' : '필수 특강 선택 필요'}">
+	                    필수 특강 선택 필요
+	                </button>
+            </form>
+            <form
+                th:if="${editLectureMode != true and adminReturnUrl == null}"
+                method="post"
+                th:action="@{/registration/back-to-register}">
+                <button
+                    type="submit"
+                    class="btn home-link-button w-100">
+                    뒤로가기
+                </button>
+            </form>
+            <form
+                th:if="${editLectureMode != true and adminReturnUrl != null}"
+                method="post"
+                th:action="@{/registration/cancel}">
+                <button
+                    type="submit"
+                    class="btn home-link-button w-100">
+                    뒤로가기
+                </button>
+            </form>
             <a
                 th:if="${editLectureMode == true}"
                 th:href="${adminReturnUrl != null ? adminReturnUrl : '/lookup'}"
@@ -295,10 +377,31 @@
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
 <div th:replace="~{fragments/footer :: adminLoginModal}"></div>
 <script>
+    let latestRequestSeq = 0;
+    const responseTimeoutMs = 4500;
+    const reselectCooldownMs = 5000;
+    const draftPanel = document.querySelector('[data-draft-panel]');
+    const adminLectureMode = draftPanel?.dataset.adminLectureMode === 'true';
+    let draftCountdownIntervalId = null;
+    let reselectCooldownIntervalId = null;
+    const reselectCooldownEndsAt = {};
+    let skipDraftReleaseOnExit = false;
+    let draftReleaseSent = false;
+
+    initializeDraftPanel();
+
+	if (window.navigation) {
+		window.navigation.addEventListener('navigate', function (event) {
+			if (event.navigationType === 'reload') {
+				skipDraftReleaseOnExit = true;
+			}
+		});
+	}
+
     document.addEventListener('submit', async function (event) {
         const form = event.target;
 
-        if (!form.matches('form[action$="/lectures/apply"], form[action$="/lectures/cancel"]')) {
+        if (!form.matches('form[action$="/lectures/apply"], form[action$="/lectures/cancel"], form[action$="/lectures/finalize"]')) {
             return;
         }
 
@@ -306,11 +409,18 @@
 
         const card = form.closest('.lectureEntity-card');
         const isCancelForm = form.getAttribute('action')?.endsWith('/lectures/cancel');
-        const isPendingLecture = card?.dataset.open === 'false';
+        const isFinalizeForm = form.getAttribute('action')?.endsWith('/lectures/finalize');
+        const expectedDraftState = card ? {
+            lectureType: card.dataset.lectureType,
+            lectureId: Number(card.dataset.lectureId),
+            selected: !isCancelForm
+        } : null;
+        const requestSeq = ++latestRequestSeq;
+        let timeoutId = null;
 
-        if (isCancelForm && isPendingLecture) {
+        if (!isCancelForm && !isFinalizeForm && shouldWarnChangingPendingConfirmedLecture(card)) {
             const confirmed = window.confirm(
-                '현재 신청이 불가능한 상태의 특강입니다.\n취소 후에는 다시 신청할 수 없을 수 있습니다.\n그래도 신청을 취소하시겠습니까?'
+                '현재 신청한 특강이 준비중 상태입니다.\n다른 특강으로 변경하면 최종 신청 후 기존 특강으로 다시 돌아가지 못할 수 있습니다.\n그래도 다른 특강을 선택하시겠습니까?'
             );
 
             if (!confirmed) {
@@ -322,8 +432,18 @@
         if (button) {
             button.disabled = true;
         }
+        if (isFinalizeForm) {
+            skipDraftReleaseOnExit = true;
+        }
 
         try {
+            if (!isFinalizeForm) {
+                timeoutId = window.setTimeout(function () {
+                    showFlashToast('처리 결과를 확인하고 있습니다.', true);
+                    synchronizeDraftState('현재 선택 상태를 반영했습니다.', expectedDraftState);
+                }, responseTimeoutMs);
+            }
+
             const response = await fetch(form.action, {
                 method: 'POST',
                 headers: {
@@ -334,34 +454,225 @@
             });
             const result = await response.json();
 
-            if (!response.ok || !result.success) {
-                showFlashToast(result.message || '처리 중 오류가 발생했습니다.', false);
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+
+            if (requestSeq !== latestRequestSeq) {
                 return;
             }
 
-            updateLectureCards(result);
+	            if (!response.ok || !result.success) {
+		                if (isFinalizeForm) {
+		                    skipDraftReleaseOnExit = false;
+		                    await synchronizeDraftState(
+	                        result.message || '신청 상태를 다시 확인했습니다.',
+	                        null,
+	                        false
+		                    );
+		                    return;
+		                }
+		                if (result.retryable === true) {
+		                    await synchronizeDraftState(
+		                        result.message || '현재 선택 상태를 다시 확인했습니다.',
+		                        null,
+		                        false
+		                    );
+		                    return;
+		                }
+		                showFlashToast(result.message || '처리 중 오류가 발생했습니다.', false);
+	                return;
+	            }
+
+            if (isFinalizeForm) {
+                showFlashToast(result.message, true);
+                window.setTimeout(function () {
+                    window.location.href = result.redirectUrl || '/registration/complete';
+                }, 600);
+                return;
+            }
+
+            if (isCancelForm) {
+                startReselectCooldown(result.lectureId || expectedDraftState?.lectureId, false);
+            }
+            applyDraftState(result);
             showFlashToast(result.message, true);
         } catch (error) {
+            if (timeoutId) {
+                window.clearTimeout(timeoutId);
+            }
+            if (requestSeq !== latestRequestSeq) {
+                return;
+            }
+            if (!isFinalizeForm) {
+                await synchronizeDraftState('처리 결과를 확인했습니다.', expectedDraftState);
+                return;
+            }
+            skipDraftReleaseOnExit = false;
             showFlashToast('처리 중 오류가 발생했습니다.', false);
         } finally {
+            if (isFinalizeForm) {
+                const finalizeButton = document.querySelector('[data-finalize-button]');
+                skipDraftReleaseOnExit = skipDraftReleaseOnExit && finalizeButton && finalizeButton.disabled;
+            }
             if (button) {
                 button.disabled = false;
             }
         }
     });
 
-    function updateLectureCards(result) {
-        const cards = document.querySelectorAll(
-            `.lectureEntity-card[data-lecture-type="${result.lectureType}"]`
+    window.addEventListener('pagehide', function () {
+        releaseDraftOnExit();
+    });
+
+    window.addEventListener('pageshow', async function (event) {
+        if (!event.persisted) {
+            return;
+        }
+
+        const redirected = await redirectCompletedApplicationFromRestoredPage();
+
+        if (!redirected) {
+            await synchronizeDraftState('현재 선택 상태를 반영했습니다.', null, true);
+        }
+    });
+
+    async function redirectCompletedApplicationFromRestoredPage() {
+        try {
+            const response = await fetch('/lectures/draft-status', {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const result = await response.json();
+
+            if (response.ok && result.success && result.completedApplication === true) {
+                window.location.replace(result.redirectUrl || '/registration/complete');
+                return true;
+            }
+        } catch (error) {
+            window.location.reload();
+        }
+
+        return false;
+    }
+
+	    async function synchronizeDraftState(message, expectedDraftState, success = true) {
+        const requestSeq = ++latestRequestSeq;
+
+        try {
+            let result = null;
+            let response = null;
+
+            for (let attempt = 0; attempt < 3; attempt++) {
+                response = await fetch('/lectures/draft-status', {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+                result = await response.json();
+
+                if (
+                    !expectedDraftState
+                    || !response.ok
+                    || !result.success
+                    || draftStateMatches(result, expectedDraftState)
+                    || attempt === 2
+                ) {
+                    break;
+                }
+
+                await delay(700 * (attempt + 1));
+            }
+
+            if (requestSeq !== latestRequestSeq) {
+                return;
+            }
+
+            if (!response.ok || !result.success) {
+                showFlashToast(result.message || '현재 선택 상태를 확인할 수 없습니다.', false);
+                return;
+	            }
+
+                if (expectedDraftState && !expectedDraftState.selected) {
+                    startReselectCooldown(expectedDraftState.lectureId, false);
+                }
+
+	            applyDraftState(result);
+	            showFlashToast(message || result.message, success);
+	        } catch (error) {
+            if (requestSeq === latestRequestSeq) {
+                showFlashToast('현재 선택 상태를 확인할 수 없습니다. 새로고침 후 다시 확인해주세요.', false);
+            }
+        }
+    }
+
+    function draftStateMatches(result, expectedDraftState) {
+        const selectedLectures = result.selectedLectures || {};
+        const selectedLecture = selectedLectures[expectedDraftState.lectureType];
+
+        if (expectedDraftState.selected) {
+            return selectedLecture && Number(selectedLecture.lectureId) === expectedDraftState.lectureId;
+        }
+
+        return !selectedLecture || Number(selectedLecture.lectureId) !== expectedDraftState.lectureId;
+    }
+
+    function delay(ms) {
+        return new Promise(function (resolve) {
+            window.setTimeout(resolve, ms);
+        });
+    }
+
+    function shouldWarnChangingPendingConfirmedLecture(targetCard) {
+        if (!targetCard) {
+            return false;
+        }
+
+        const confirmedCard = document.querySelector(
+            `.lectureEntity-card[data-lecture-type="${targetCard.dataset.lectureType}"][data-confirmed-selected="true"]`
         );
 
-        cards.forEach(function (card) {
+        return confirmedCard
+            && confirmedCard.dataset.lectureId !== targetCard.dataset.lectureId
+            && confirmedCard.dataset.open === 'false';
+    }
+
+    function applyDraftState(result) {
+        const selectedLectures = result.selectedLectures || {};
+        const lectureTypes = ['AM', 'PM'];
+
+        lectureTypes.forEach(function (lectureType) {
+            const selectedLecture = selectedLectures[lectureType];
+            const selectedLectureId = selectedLecture ? Number(selectedLecture.lectureId) : null;
+            const cards = document.querySelectorAll(
+                `.lectureEntity-card[data-lecture-type="${lectureType}"]`
+            );
+
+            cards.forEach(function (card) {
+                updateLectureCard(card, selectedLectureId, selectedLecture, result);
+            });
+        });
+
+        updateFinalizeButton(result.readyToFinalize);
+        updateDraftPanel(result);
+    }
+
+    function updateLectureCard(card, selectedLectureId, selectedLecture, result) {
             const lectureId = Number(card.dataset.lectureId);
-            const isTarget = lectureId === Number(result.lectureId);
-            const isSelected = result.selected && isTarget;
+            const lectureAvailability = result.lectureAvailabilities?.[String(lectureId)];
+            const hasDraftForType = selectedLectureId !== null;
+            const isDraftSelected = hasDraftForType && lectureId === selectedLectureId;
+            const isConfirmedSelected = !hasDraftForType && card.dataset.confirmedSelected === 'true';
+            const isSelected = isDraftSelected || isConfirmedSelected;
+            const isTarget = result.lectureId != null && lectureId === Number(result.lectureId);
             const badge = card.querySelector('.selected-lectureEntity-badge');
             const remainingBadge = card.querySelector('.badge.bg-secondary');
             const actionArea = card.querySelector('.lectureEntity-action-area');
+
+            if (isDraftSelected) {
+                card.dataset.confirmedSelected = 'false';
+            }
 
             card.classList.toggle('lectureEntity-card-selected', isSelected);
 
@@ -369,34 +680,92 @@
                 badge.classList.toggle('d-none', !isSelected);
             }
 
-            if (isTarget) {
+            if (lectureAvailability) {
+                updateLectureAvailability(card, remainingBadge, lectureAvailability);
+            } else if (isDraftSelected && selectedLecture) {
+                card.dataset.remainingCapacity = String(selectedLecture.remainingCapacity);
+                card.dataset.full = String(selectedLecture.remainingCapacity <= 0);
+                const displayedRemainingCapacity = getDisplayedRemainingCapacity(
+                    selectedLecture.remainingCapacity,
+                    card.dataset.open === 'true'
+                );
+                remainingBadge.textContent = `남은 자리 ${displayedRemainingCapacity}명`;
+            } else if (isTarget) {
                 card.dataset.remainingCapacity = String(result.remainingCapacity);
                 card.dataset.full = String(result.remainingCapacity <= 0);
-                const displayedRemainingCapacity = card.dataset.open === 'false' ? 0 : result.remainingCapacity;
+                const displayedRemainingCapacity = getDisplayedRemainingCapacity(
+                    result.remainingCapacity,
+                    card.dataset.open === 'true'
+                );
                 remainingBadge.textContent = `남은 자리 ${displayedRemainingCapacity}명`;
             }
 
-            actionArea.innerHTML = getActionHtml(card, result.selected);
-        });
+	            actionArea.innerHTML = getActionHtml(card, isDraftSelected, hasDraftForType, selectedLecture);
+	    }
+
+    function updateLectureAvailability(card, remainingBadge, lectureAvailability) {
+        const remainingCapacity = Number(lectureAvailability.remainingCapacity);
+        const isOpen = lectureAvailability.open === true;
+
+        card.dataset.remainingCapacity = String(remainingCapacity);
+        card.dataset.full = String(lectureAvailability.full === true || remainingCapacity <= 0);
+        card.dataset.open = String(isOpen);
+
+        if (remainingBadge) {
+            remainingBadge.textContent = `남은 자리 ${getDisplayedRemainingCapacity(remainingCapacity, isOpen)}명`;
+        }
     }
 
-    function getActionHtml(card, hasSelectedLecture) {
-        const lectureId = card.dataset.lectureId;
-        const isSelectedCard = card.classList.contains('lectureEntity-card-selected');
+    function getDisplayedRemainingCapacity(remainingCapacity, isOpen) {
+        if (adminLectureMode) {
+            return remainingCapacity;
+        }
+        if (!isOpen) {
+            return 0;
+        }
+
+        return Math.max(0, remainingCapacity);
+    }
+
+	    function getActionHtml(card, isDraftSelected, hasDraftForType, selectedLecture) {
+	        const lectureId = card.dataset.lectureId;
+        const lectureType = card.dataset.lectureType;
         const isFull = card.dataset.full === 'true';
         const isOpen = card.dataset.open === 'true';
+        const isConfirmedSelected = !hasDraftForType && card.dataset.confirmedSelected === 'true';
 
-        if (isSelectedCard) {
-            return `
-                <form action="/lectures/cancel" method="post">
-                    <input type="hidden" name="lectureId" value="${lectureId}">
-                    <button class="btn lectureEntity-btn lectureEntity-btn-cancel w-100">신청 취소</button>
-                </form>
+	        if (isDraftSelected) {
+	            const expiresAt = selectedLecture?.expiresAt || '';
+	            return `
+	                <form action="/lectures/cancel" method="post">
+	                    <div class="lecture-card-draft-timer">
+	                        <span>${toLectureTypeLabel(lectureType)} 점유 남은 시간</span>
+	                        <strong data-card-draft-countdown data-lecture-type="${lectureType}" data-expires-at="${expiresAt}">--:--</strong>
+	                    </div>
+	                    <input type="hidden" name="lectureId" value="${lectureId}">
+	                    <button class="btn lectureEntity-btn lectureEntity-btn-cancel w-100">선택 해제</button>
+	                </form>
             `;
         }
 
-        const disabled = !isOpen || hasSelectedLecture || isFull;
-        const text = !isOpen ? '준비중' : (hasSelectedLecture ? '이미 선택한 시간대입니다' : (isFull ? '마감' : '신청하기'));
+        if (isConfirmedSelected) {
+            return `
+                <button class="btn lectureEntity-btn lectureEntity-btn-muted w-100" disabled>
+                    현재 신청
+                </button>
+            `;
+        }
+
+        const cooldownRemainingSeconds = getReselectCooldownRemainingSeconds(lectureId);
+        const isCoolingDown = !hasDraftForType && cooldownRemainingSeconds > 0;
+        const disabled = (!isOpen && !adminLectureMode) || (isFull && !adminLectureMode) || hasDraftForType || isCoolingDown;
+        const text = !isOpen && !adminLectureMode
+            ? '준비중'
+            : (hasDraftForType
+                ? '선택 해제 후 변경'
+                : (isFull && !adminLectureMode
+                    ? '마감'
+                    : (isCoolingDown ? `다시 선택 가능 ${cooldownRemainingSeconds}초` : '선택하기')));
 
         return `
             <form action="/lectures/apply" method="post">
@@ -406,6 +775,368 @@
                 </button>
             </form>
         `;
+    }
+
+    function startReselectCooldown(lectureId, refresh = true) {
+        if (!lectureId) {
+            return;
+        }
+
+        reselectCooldownEndsAt[lectureId] = Date.now() + reselectCooldownMs;
+
+        if (reselectCooldownIntervalId == null) {
+            reselectCooldownIntervalId = window.setInterval(updateReselectCooldowns, 1000);
+        }
+
+        if (refresh) {
+            updateReselectCooldownButtons();
+        }
+    }
+
+    function updateReselectCooldowns() {
+        const now = Date.now();
+
+        Object.keys(reselectCooldownEndsAt).forEach(function (lectureId) {
+            if (reselectCooldownEndsAt[lectureId] <= now) {
+                delete reselectCooldownEndsAt[lectureId];
+            }
+        });
+
+        updateReselectCooldownButtons();
+
+        if (Object.keys(reselectCooldownEndsAt).length === 0 && reselectCooldownIntervalId != null) {
+            window.clearInterval(reselectCooldownIntervalId);
+            reselectCooldownIntervalId = null;
+        }
+    }
+
+    function updateReselectCooldownButtons() {
+        document.querySelectorAll('.lectureEntity-card').forEach(updateReselectCooldownButton);
+    }
+
+    function updateReselectCooldownButton(card) {
+        const actionArea = card.querySelector('.lectureEntity-action-area');
+        const form = actionArea?.querySelector('form[action$="/lectures/apply"]');
+        const button = form?.querySelector('button');
+
+        if (!button) {
+            return;
+        }
+
+        const lectureId = card.dataset.lectureId;
+        const lectureType = card.dataset.lectureType;
+        const isOpen = card.dataset.open === 'true';
+        const isFull = card.dataset.full === 'true';
+        const hasDraftForType = hasActiveDraftForLectureType(lectureType);
+        const cooldownRemainingSeconds = getReselectCooldownRemainingSeconds(lectureId);
+        const isCoolingDown = !hasDraftForType && cooldownRemainingSeconds > 0;
+
+        button.disabled = (!isOpen && !adminLectureMode) || (isFull && !adminLectureMode) || hasDraftForType || isCoolingDown;
+        button.classList.toggle('lectureEntity-btn-muted', button.disabled);
+
+        if (!isOpen && !adminLectureMode) {
+            button.textContent = '준비중';
+            return;
+        }
+        if (hasDraftForType) {
+            button.textContent = '선택 해제 후 변경';
+            return;
+        }
+        if (isFull && !adminLectureMode) {
+            button.textContent = '마감';
+            return;
+        }
+
+        button.textContent = isCoolingDown ? `다시 선택 가능 ${cooldownRemainingSeconds}초` : '선택하기';
+    }
+
+    function hasActiveDraftForLectureType(lectureType) {
+        return Boolean(document.querySelector(
+            `.lectureEntity-card[data-lecture-type="${lectureType}"] [data-card-draft-countdown]`
+        ));
+    }
+
+    function getReselectCooldownRemainingSeconds(lectureId) {
+        const endsAt = reselectCooldownEndsAt[lectureId];
+
+        if (!endsAt) {
+            return 0;
+        }
+
+        const remainingMs = endsAt - Date.now();
+
+        if (remainingMs <= 0) {
+            return 0;
+        }
+
+        return Math.ceil(remainingMs / 1000);
+    }
+
+    function updateFinalizeButton(readyToFinalize) {
+        const button = document.querySelector('[data-finalize-button]');
+
+        if (!button) {
+            return;
+        }
+
+	        button.disabled = !readyToFinalize;
+	        button.classList.toggle('lectureEntity-btn-muted', !readyToFinalize);
+	        button.classList.toggle('finalize-button-ready', Boolean(readyToFinalize));
+	        button.classList.toggle('finalize-button-disabled', !readyToFinalize);
+	        button.textContent = readyToFinalize ? '최종 신청 가능' : '필수 특강 선택 필요';
+	    }
+
+    function initializeDraftPanel() {
+        const panel = document.querySelector('[data-draft-panel]');
+
+        if (!panel) {
+            return;
+        }
+
+        const selectedLectures = {};
+
+        document.querySelectorAll('.lectureEntity-card').forEach(function (card) {
+            const hasDraftAction = Array.from(card.querySelectorAll('form')).some(function (form) {
+                return form.getAttribute('action')?.endsWith('/lectures/cancel');
+            });
+
+            if (!hasDraftAction) {
+                return;
+            }
+
+            selectedLectures[card.dataset.lectureType] = {
+                lectureId: Number(card.dataset.lectureId),
+                remainingCapacity: Number(card.dataset.remainingCapacity || 0),
+                expiresAt: card.querySelector('[data-card-draft-countdown]')?.dataset.expiresAt
+                    || panel.dataset.draftExpiresAt
+                    || null
+            };
+        });
+
+        updateDraftPanel({
+            selectedLectures,
+            readyToFinalize: !document.querySelector('[data-finalize-button]')?.disabled,
+            draftExpiresAt: panel.dataset.draftExpiresAt || null
+        });
+    }
+
+    function updateDraftPanel(result) {
+        const panel = document.querySelector('[data-draft-panel]');
+
+        if (!panel) {
+            return;
+        }
+
+        const selectedLectures = result.selectedLectures || {};
+        const selectedTypes = Object.keys(selectedLectures);
+        const hasDraftSelection = selectedTypes.length > 0;
+
+        panel.classList.toggle('d-none', !hasDraftSelection);
+
+        if (!hasDraftSelection) {
+            stopDraftCountdown();
+            return;
+        }
+
+        panel.dataset.draftExpiresAt = getEarliestDraftExpiresAt(selectedLectures)
+            || result.draftExpiresAt
+            || panel.dataset.draftExpiresAt
+            || '';
+        updateDraftMessage(panel, selectedLectures, Boolean(result.readyToFinalize));
+        startDraftCountdown(panel.dataset.draftExpiresAt);
+    }
+
+    function updateDraftMessage(panel, selectedLectures, readyToFinalize) {
+        const message = panel.querySelector('[data-draft-message]');
+        const requiredTypes = getRequiredLectureTypes(panel);
+        const missingTypes = requiredTypes.filter(function (lectureType) {
+            return !selectedLectures[lectureType];
+        });
+
+        if (!message) {
+            return;
+        }
+
+        if (panel.dataset.editLectureMode === 'true') {
+            if (readyToFinalize) {
+                message.textContent = '수정 중에는 기존 신청이 유지됩니다. 변경하려면 반드시 아래 최종 신청을 눌러주세요.';
+                return;
+            }
+
+            if (missingTypes.length > 0) {
+                message.textContent = `${missingTypes.map(toLectureTypeLabel).join(', ')}까지 선택한 뒤 최종 신청을 눌러야 변경됩니다. 최종 신청하지 않으면 기존 신청이 유지됩니다.`;
+                return;
+            }
+        }
+
+        if (readyToFinalize) {
+            message.textContent = '필수 특강 선택이 끝났습니다. 아직 신청 완료가 아니므로 반드시 아래 최종 신청을 눌러주세요.';
+            return;
+        }
+
+        if (missingTypes.length > 0) {
+            message.textContent = `${missingTypes.map(toLectureTypeLabel).join(', ')}까지 선택한 뒤, 반드시 최종 신청을 눌러야 신청이 완료됩니다.`;
+            return;
+        }
+
+        message.textContent = '선택 상태를 확인하고 있습니다.';
+    }
+
+    function getRequiredLectureTypes(panel) {
+        const requiredTypes = [];
+
+        if (panel.dataset.canSelectAm === 'true') {
+            requiredTypes.push('AM');
+        }
+        if (panel.dataset.canSelectPm === 'true') {
+            requiredTypes.push('PM');
+        }
+
+        return requiredTypes;
+    }
+
+    function toLectureTypeLabel(lectureType) {
+        return lectureType === 'AM' ? '오전 특강' : '오후 특강';
+    }
+
+    function startDraftCountdown(expiresAtValue) {
+        stopDraftCountdown();
+        updateDraftCountdown(expiresAtValue);
+
+        if (!expiresAtValue) {
+            return;
+        }
+
+        draftCountdownIntervalId = window.setInterval(function () {
+            updateDraftCountdown(expiresAtValue);
+        }, 1000);
+    }
+
+    function stopDraftCountdown() {
+        if (draftCountdownIntervalId) {
+            window.clearInterval(draftCountdownIntervalId);
+            draftCountdownIntervalId = null;
+        }
+    }
+
+    function updateDraftCountdown(expiresAtValue) {
+        let expired = false;
+        const panelCountdown = document.querySelector('[data-draft-countdown]');
+
+        if (panelCountdown) {
+            expired = updateCountdownElement(panelCountdown, expiresAtValue) || expired;
+        }
+
+        document.querySelectorAll('[data-card-draft-countdown]').forEach(function (countdown) {
+            expired = updateCountdownElement(countdown, countdown.dataset.expiresAt) || expired;
+        });
+
+        if (expired) {
+            stopDraftCountdown();
+            synchronizeDraftState('임시 선택 시간이 만료되었습니다.', null);
+        }
+    }
+
+    function updateCountdownElement(countdown, expiresAtValue) {
+        countdown.classList.remove('is-expiring', 'is-expired');
+
+        const expiresAt = parseDraftExpiresAt(expiresAtValue);
+
+        if (!expiresAt) {
+            countdown.textContent = '--:--';
+            return false;
+        }
+
+        const remainingMs = expiresAt.getTime() - Date.now();
+
+        if (remainingMs <= 0) {
+            countdown.textContent = '00:00';
+            countdown.classList.add('is-expired');
+            return true;
+        }
+
+        const totalSeconds = Math.ceil(remainingMs / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        countdown.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+        if (totalSeconds <= 60) {
+            countdown.classList.add('is-expiring');
+        }
+
+        return false;
+    }
+
+    function getEarliestDraftExpiresAt(selectedLectures) {
+        let earliestValue = null;
+        let earliestTime = Number.POSITIVE_INFINITY;
+
+        Object.values(selectedLectures || {}).forEach(function (selectedLecture) {
+            const expiresAtValue = selectedLecture?.expiresAt;
+            const expiresAt = parseDraftExpiresAt(expiresAtValue);
+
+            if (!expiresAt || expiresAt.getTime() >= earliestTime) {
+                return;
+            }
+
+            earliestValue = expiresAtValue;
+            earliestTime = expiresAt.getTime();
+        });
+
+        return earliestValue;
+    }
+
+    function parseDraftExpiresAt(expiresAtValue) {
+        if (!expiresAtValue) {
+            return null;
+        }
+
+        const normalizedValue = expiresAtValue.includes('T') ? expiresAtValue : expiresAtValue.replace(' ', 'T');
+        const expiresAt = new Date(normalizedValue);
+
+        if (Number.isNaN(expiresAt.getTime())) {
+            return null;
+        }
+
+        return expiresAt;
+    }
+
+    function releaseDraftOnExit() {
+        if (skipDraftReleaseOnExit || draftReleaseSent || !hasActiveDraftSelection()) {
+            return;
+        }
+
+        draftReleaseSent = true;
+        const url = '/lectures/drafts/release';
+        const payload = new Blob(['release'], {
+            type: 'text/plain'
+        });
+
+        if (navigator.sendBeacon && navigator.sendBeacon(url, payload)) {
+            return;
+        }
+
+        fetch(url, {
+            method: 'POST',
+            keepalive: true,
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: 'release'
+        }).catch(function () {
+        });
+    }
+
+    function hasActiveDraftSelection() {
+        const panel = document.querySelector('[data-draft-panel]');
+
+        if (panel && !panel.classList.contains('d-none')) {
+            return true;
+        }
+
+        return Array.from(document.querySelectorAll('.lectureEntity-action-area form')).some(function (form) {
+            return form.getAttribute('action')?.endsWith('/lectures/cancel');
+        });
     }
 
     function showFlashToast(message, success) {

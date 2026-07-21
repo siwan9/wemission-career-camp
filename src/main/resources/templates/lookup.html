@@ -6,7 +6,7 @@
 
     <title>신청 조회</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    <link th:href="@{/vendor/bootstrap/bootstrap.min.css}"
           rel="stylesheet">
     <link rel="stylesheet"
           th:href="@{/css/footer.css}">
@@ -69,51 +69,10 @@
             opacity: 1;
         }
 
-        .password-field {
-            position: relative;
-        }
-
-        .password-field .form-control {
-            padding-right: 58px;
-        }
-
-        .password-toggle {
-            position: absolute;
-            top: 50%;
-            right: 10px;
-            width: 38px;
-            height: 38px;
-            padding: 0;
-            border: 0;
-            border-radius: 50%;
-            background: transparent;
-            color: #212529;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            transform: translateY(-50%);
-        }
-
-        .password-toggle:hover {
-            background: transparent;
-            color: #000000;
-        }
-
-        .password-toggle:focus-visible {
-            outline: 2px solid #adb5bd;
-            outline-offset: 2px;
-        }
-
-        .password-toggle-icon-hide {
-            display: none;
-        }
-
-        .password-toggle.is-visible .password-toggle-icon-show {
-            display: none;
-        }
-
-        .password-toggle.is-visible .password-toggle-icon-hide {
-            display: block;
+        .form-select {
+            height: 56px;
+            border-radius: 12px;
+            font-size: 1rem;
         }
 
         .result-list {
@@ -139,7 +98,7 @@
 
         .result-actions {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 1fr;
             gap: 8px;
             margin-top: 16px;
         }
@@ -186,6 +145,18 @@
             color: #ffffff;
         }
 
+        .lookup-action-button-danger {
+            border: 1px solid #dc3545;
+            background: #dc3545;
+            color: #ffffff;
+        }
+
+        .lookup-action-button-danger:hover {
+            border-color: #bb2d3b;
+            background: #bb2d3b;
+            color: #ffffff;
+        }
+
         .participant-name {
             font-weight: 700;
             margin-bottom: 4px;
@@ -227,6 +198,11 @@
                 font-size: .98rem;
             }
 
+            .form-select {
+                height: 52px;
+                font-size: .98rem;
+            }
+
             .lectureEntity-row {
                 grid-template-columns: 56px 1fr;
                 gap: 8px;
@@ -245,6 +221,39 @@
                 action="/lookup">
 
             <div class="mb-3">
+                <label class="form-label">이름</label>
+                <input
+                        type="text"
+                        name="name"
+                        class="form-control form-control-lg"
+                        th:value="${name}"
+                        placeholder="참가자 이름"
+                        required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">교회</label>
+                <select
+                        name="churchId"
+                        class="form-select"
+                        required>
+                    <option
+                            value=""
+                            disabled
+                            th:selected="${churchId == null}">
+                        교회를 선택해주세요
+                    </option>
+                    <option
+                            th:each="church : ${churches}"
+                            th:value="${church.id}"
+                            th:selected="${churchId != null and churchId == church.id}"
+                            th:text="${church.name}">
+                        교회명
+                    </option>
+                </select>
+            </div>
+
+            <div class="mb-4">
                 <label class="form-label">전화번호</label>
                 <input
                         type="text"
@@ -259,63 +268,6 @@
                         required>
             </div>
 
-            <div class="mb-4">
-                <label class="form-label">조회용 PIN</label>
-                <div class="password-field">
-                    <input
-                            id="lookupPassword"
-                            type="password"
-                            name="password"
-                            class="form-control form-control-lg"
-                            inputmode="numeric"
-                            pattern="[0-9]{6}"
-                            minlength="6"
-                            maxlength="6"
-                            th:value="${password}"
-                            placeholder="숫자 6자리"
-                            required>
-                    <button
-                            id="lookupPasswordToggleButton"
-                            type="button"
-                            class="password-toggle"
-                            aria-label="PIN 보기"
-                            aria-pressed="false">
-                        <svg
-                                class="password-toggle-icon password-toggle-icon-show"
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                aria-hidden="true">
-                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/>
-                            <circle cx="12" cy="12" r="3"/>
-                        </svg>
-                        <svg
-                                class="password-toggle-icon password-toggle-icon-hide"
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="20"
-                                height="20"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                                stroke-linecap="round"
-                                stroke-linejoin="round"
-                                aria-hidden="true">
-                            <path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/>
-                            <path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c6.5 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/>
-                            <path d="M6.61 6.61C3.64 8.61 2 12 2 12s3.5 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/>
-                            <line x1="2" x2="22" y1="2" y2="22"/>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-
             <button
                     type="submit"
                     class="btn btn-primary w-100 btn-lookup">
@@ -328,6 +280,16 @@
                 th:if="${lookupErrorMessage}"
                 class="alert alert-danger mt-4"
                 th:text="${lookupErrorMessage}">
+        </div>
+        <div
+                th:if="${errorMessage}"
+                class="alert alert-danger mt-4"
+                th:text="${errorMessage}">
+        </div>
+        <div
+                th:if="${lookupSuccessMessage}"
+                class="alert alert-success mt-4"
+                th:text="${lookupSuccessMessage}">
         </div>
 
         <div
@@ -387,7 +349,8 @@
 
                     <form
                             method="post"
-                            action="/lookup/edit-lecture">
+                            action="/lookup/edit-lecture"
+                            onsubmit="return confirm('수강신청 수정 화면으로 이동합니다. 기존 신청은 최종 저장 전까지 유지되고, 새로 선택한 특강은 제한 시간 동안만 임시 점유됩니다. 변경하려면 수정 화면에서 반드시 최종 신청을 눌러주세요.')">
                         <input
                                 type="hidden"
                                 name="participantLectureId"
@@ -396,6 +359,21 @@
                                 type="submit"
                                 class="btn lookup-action-button lookup-action-button-primary w-100">
                             수강신청 수정
+                        </button>
+                    </form>
+
+                    <form
+                            method="post"
+                            action="/lookup/delete"
+                            onsubmit="return confirm('신청 정보를 삭제할까요? 삭제 후에는 복구할 수 없습니다.')">
+                        <input
+                                type="hidden"
+                                name="participantLectureId"
+                                th:value="${result.participantLectureId}">
+                        <button
+                                type="submit"
+                                class="btn lookup-action-button lookup-action-button-danger w-100">
+                            삭제
                         </button>
                     </form>
                 </div>
@@ -422,27 +400,6 @@
 <div th:replace="~{fragments/footer :: siteFooter}"></div>
 <div th:replace="~{fragments/footer :: adminLoginModal}"></div>
 
-<script>
-    const lookupPassword = document.getElementById('lookupPassword');
-    const lookupPasswordToggleButton = document.getElementById('lookupPasswordToggleButton');
-
-    if (lookupPassword) {
-        lookupPassword.addEventListener('input', function () {
-            this.value = this.value.replace(/\D/g, '').slice(0, 6);
-        });
-    }
-
-    if (lookupPasswordToggleButton && lookupPassword) {
-        lookupPasswordToggleButton.addEventListener('click', function () {
-            const shouldShow = lookupPassword.type === 'password';
-
-            lookupPassword.type = shouldShow ? 'text' : 'password';
-            this.classList.toggle('is-visible', shouldShow);
-            this.setAttribute('aria-label', shouldShow ? 'PIN 숨기기' : 'PIN 보기');
-            this.setAttribute('aria-pressed', String(shouldShow));
-        });
-    }
-</script>
 <script th:replace="~{fragments/footer :: siteFooterScript}"></script>
 </body>
 </html>

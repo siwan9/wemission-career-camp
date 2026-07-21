@@ -1,10 +1,5 @@
 const form = document.getElementById('registrationForm');
 const phoneNumberInput = document.getElementById('phoneNumber');
-const passwordInput = document.getElementById('password');
-const confirmAdditionalInput = document.getElementById('confirmAdditionalInput');
-const confirmAdditionalButton = document.getElementById('confirmAdditionalButton');
-const passwordToggleButton = document.getElementById('passwordToggleButton');
-const duplicateApplicationModal = document.getElementById('duplicateApplicationModal');
 const submitButton = document.getElementById('submitButton');
 const churchCombobox = document.querySelector('[data-church-combobox]');
 const participantTypeSelect = document.getElementById('participantTypeId');
@@ -55,8 +50,7 @@ function saveFormState() {
             name: formData.get('name') || '',
             participantTypeId: formData.get('participantTypeId') || '',
             churchId: formData.get('churchId') || '',
-            phoneNumber: formData.get('phoneNumber') || '',
-            password: formData.get('password') || ''
+            phoneNumber: formData.get('phoneNumber') || ''
         })
     );
 }
@@ -162,17 +156,9 @@ if (submitButton) {
 }
 
 window.addEventListener('pageshow', function () {
-    if (isEditMode && passwordInput && !passwordInput.value && passwordInput.dataset.existingPassword) {
-        passwordInput.value = passwordInput.dataset.existingPassword;
-    }
-
     restoreFormState();
     syncChurchSearchInput();
     syncParticipantTypePlaceholder();
-
-    if (confirmAdditionalInput) {
-        confirmAdditionalInput.value = 'false';
-    }
 
     if (!submitButton) {
         return;
@@ -182,24 +168,9 @@ window.addEventListener('pageshow', function () {
     submitButton.innerHTML = submitButton.dataset.defaultHtml;
 });
 
-if (
-    duplicateApplicationModal
-    && duplicateApplicationModal.dataset.show === 'true'
-    && window.bootstrap
-) {
-    new bootstrap.Modal(duplicateApplicationModal).show();
-}
-
 if (phoneNumberInput) {
     phoneNumberInput.addEventListener('input', function () {
         this.value = this.value.replace(/\D/g, '').slice(0, 11);
-        saveFormState();
-    });
-}
-
-if (passwordInput) {
-    passwordInput.addEventListener('input', function () {
-        this.value = this.value.replace(/\D/g, '').slice(0, 6);
         saveFormState();
     });
 }
@@ -246,31 +217,6 @@ if (churchSearchInput && churchIdInput && churchOptions) {
 
 syncParticipantTypePlaceholder();
 
-if (passwordToggleButton && passwordInput) {
-    passwordToggleButton.addEventListener('click', function () {
-        const shouldShow = passwordInput.type === 'password';
-
-        passwordInput.type = shouldShow ? 'text' : 'password';
-        this.classList.toggle('is-visible', shouldShow);
-        this.setAttribute('aria-label', shouldShow ? 'PIN 숨기기' : 'PIN 보기');
-        this.setAttribute('aria-pressed', String(shouldShow));
-    });
-}
-
-if (confirmAdditionalButton) {
-    confirmAdditionalButton.addEventListener('click', function () {
-        const values = getSavedFormState();
-
-        if (passwordInput && !passwordInput.value && values && values.password) {
-            passwordInput.value = values.password;
-        }
-
-        confirmAdditionalInput.value = 'true';
-        saveFormState();
-        form.requestSubmit();
-    });
-}
-
 form.addEventListener('submit', function (e) {
     restoreFormState();
 
@@ -280,16 +226,6 @@ form.addEventListener('submit', function (e) {
         alert('전화번호는 10~11자리 숫자로 입력해주세요.');
 
         phoneNumberInput.focus();
-
-        return;
-    }
-
-    if (passwordInput && !/^\d{6}$/.test(passwordInput.value)) {
-        e.preventDefault();
-
-        alert('조회용 비밀번호는 숫자 6자리로 입력해주세요.');
-
-        passwordInput.focus();
 
         return;
     }

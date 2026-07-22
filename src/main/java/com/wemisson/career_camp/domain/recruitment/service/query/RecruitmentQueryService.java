@@ -57,7 +57,6 @@ public class RecruitmentQueryService {
 		.maximumSize(1)
 		.build();
 
-	@Transactional(readOnly = true)
 	public Optional<RecruitmentEntity> findCurrentRecruitment() {
 		return currentRecruitmentCache.get(
 			CURRENT_RECRUITMENT_CACHE_KEY,
@@ -100,7 +99,6 @@ public class RecruitmentQueryService {
 		findParticipantTypeRules(recruitmentEntity);
 	}
 
-	@Transactional(readOnly = true)
 	public Optional<RecruitmentEntity> findVisibleRecruitment() {
 		return findActiveVisibleRecruitment()
 			.or(this::findLatestClosedRecruitment);
@@ -132,7 +130,6 @@ public class RecruitmentQueryService {
 		);
 	}
 
-	@Transactional(readOnly = true)
 	public List<ParticipantTypeRule> findParticipantTypeRules(RecruitmentEntity recruitmentEntity) {
 		return getRecruitmentScopedCacheValue(
 			participantTypeRulesCache,
@@ -144,7 +141,6 @@ public class RecruitmentQueryService {
 		);
 	}
 
-	@Transactional(readOnly = true)
 	public ParticipantTypeRule findParticipantTypeRule(
 		RecruitmentEntity recruitmentEntity,
 		Long participantTypeId
@@ -156,7 +152,6 @@ public class RecruitmentQueryService {
 			.orElseThrow(() -> new IllegalArgumentException("현재 모집에서 신청할 수 없는 참가자 유형입니다."));
 	}
 
-	@Transactional(readOnly = true)
 	public List<RecruitmentChurchView> findChurches(RecruitmentEntity recruitmentEntity) {
 		Objects.requireNonNull(recruitmentEntity, "recruitmentEntity must not be null");
 
@@ -170,7 +165,6 @@ public class RecruitmentQueryService {
 		);
 	}
 
-	@Transactional(readOnly = true)
 	public boolean isSelectableChurch(RecruitmentEntity recruitmentEntity, Long churchId) {
 		return findChurches(recruitmentEntity)
 			.stream()
@@ -218,16 +212,13 @@ public class RecruitmentQueryService {
 		RecruitmentEntity recruitmentEntity,
 		java.util.function.Supplier<T> loader
 	) {
-		RecruitmentCacheEntry<T> cachedEntry = cache.getIfPresent(SINGLE_RECRUITMENT_SCOPED_CACHE_KEY);
+		return cache.asMap().compute(SINGLE_RECRUITMENT_SCOPED_CACHE_KEY, (key, cachedEntry) -> {
+			if (cachedEntry != null && cachedEntry.recruitmentId().equals(recruitmentEntity.getId())) {
+				return cachedEntry;
+			}
 
-		if (cachedEntry != null && cachedEntry.recruitmentId().equals(recruitmentEntity.getId())) {
-			return cachedEntry.value();
-		}
-
-		T value = loader.get();
-		cache.put(SINGLE_RECRUITMENT_SCOPED_CACHE_KEY, new RecruitmentCacheEntry<>(recruitmentEntity.getId(), value));
-
-		return value;
+			return new RecruitmentCacheEntry<>(recruitmentEntity.getId(), loader.get());
+		}).value();
 	}
 
 	private record RecruitmentCacheEntry<T>(

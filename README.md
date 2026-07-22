@@ -7,7 +7,7 @@
 - 운영 DB는 기존 MySQL 인스턴스와 영구 볼륨을 계속 사용한다. 애플리케이션 재배포 시 DB 컨테이너나 볼륨을 삭제하지 않는다.
 - 첫 배포 전 DB 백업을 만든다. `flyway_schema_history` 테이블은 이후 배포에서도 삭제하지 않는다.
 - 현재 HTTP 세션과 페이지 이탈 시 점유 해제 예약은 애플리케이션 메모리에 있다. Spring 인스턴스는 1개로 운영한다. 다중 인스턴스가 필요하면 먼저 공유 세션과 분산 예약 저장소를 도입해야 한다.
-- MySQL 연결 수는 애플리케이션 풀 크기보다 충분히 크게 둔다. 기본 풀은 최대 24개이며 `DB_POOL_MAX_SIZE`로 조정할 수 있다.
+- MySQL 연결 수는 애플리케이션 풀 크기보다 충분히 크게 둔다. 운영 기본 풀은 16개 고정이며 `DB_POOL_MAX_SIZE`, `DB_POOL_MIN_IDLE`로 조정할 수 있다.
 
 필수 운영 환경변수:
 
@@ -16,6 +16,9 @@ SPRING_PROFILES_ACTIVE=prod
 DB_URL='jdbc:mysql://127.0.0.1:3306/career_camp?useUnicode=true&characterEncoding=utf8'
 DB_USERNAME='...'
 DB_PASSWORD='...'
+DB_POOL_MAX_SIZE=16
+DB_POOL_MIN_IDLE=16
+DB_CONNECTION_TIMEOUT_MS=10000
 SESSION_COOKIE_SECURE=true
 ```
 

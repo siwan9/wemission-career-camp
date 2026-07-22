@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.wemisson.career_camp.domain.participant.entity.ParticipantEntity;
 import com.wemisson.career_camp.domain.participant.entity.ParticipantLectureDraftEntity;
@@ -127,6 +128,7 @@ public class LectureDraftService {
 		);
 	}
 
+	@Transactional
 	public void releaseAll(String draftToken) {
 		if (draftToken == null) {
 			return;

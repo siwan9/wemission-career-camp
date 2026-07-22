@@ -95,7 +95,42 @@ k6 run k6/registration-race.js
 - `unexpected_flow_error`: `0`
 - `completion_page_success`: `100%`
 
-## 3. DB 무결성 확인
+## 3. 일반 사용자 혼합 흐름
+
+홈, 전체 강좌, 신청 내역 조회, 인적사항 입력 후 이탈, 임시점유 후 해제를 한 번에 섞어 실제 사용자 흐름과 유사한 DB 부하를 만든다. `HOLD_LECTURE_IDS`에는 신청 가능하고 남은 자리가 있는 강좌를 여러 개 전달해 잠금 경합을 분산한다.
+
+```bash
+BASE_URL=https://example.com \
+PARTICIPANT_TYPE_ID=1 \
+CHURCH_ID=1 \
+HOLD_LECTURE_IDS='1,3,4,5,6,7,8,9,11,12,13,14,15,16,17,18' \
+BROWSE_USERS=350 \
+LOOKUP_USERS=300 \
+REGISTRATION_USERS=250 \
+HOLD_RELEASE_USERS=100 \
+RUN_ID=user-journey-rehearsal-01 \
+CONFIRM_LOAD_TEST=user-journey \
+k6 run k6/user-journey.js
+```
+
+이 구성은 총 1,000개의 독립 브라우저 세션을 동시에 시작한다.
+
+- 조회 사용자는 `/home`과 `/lectures` 및 참가자 타입 필터를 조회한다.
+- 검색 사용자는 `/lookup`에서 존재하지 않는 인적사항을 두 번 조회해 복합 인덱스와 세션 복원 흐름을 검증한다.
+- 신청 이탈 사용자는 `/register` → 인적사항 입력 → `/lecture` → 뒤로가기 → 신청 취소를 수행한다.
+- 점유 사용자는 열린 강좌 하나를 점유하고 상태를 재조회한 뒤 해제하여 draft 생성·조회·삭제와 강좌 행 잠금을 검증한다.
+
+쓰기 없이 조회 흐름만 먼저 실행하려면 `HOLD_RELEASE_USERS=0`으로 지정한다. 점유 사용자가 있으면 setup 단계에서 한 건을 실제 점유·해제해 모집 시간과 API 상태를 사전 검증한다.
+
+성공 기준:
+
+- 각 `journey_success{flow:...}`: 99.5% 초과
+- `unexpected_flow_error`: 0
+- `lookup_miss_success`, `registration_abandon_success`: 99.5% 초과
+- `hold_success`, `release_success`, `empty_draft_after_release`: 99.5% 초과
+- 홈 p95 1.5초 미만, 전체 강좌·조회 p95 2초 미만, 신청 화면 p95 2.5초 미만
+
+## 4. DB 무결성 확인
 
 k6 성공 여부와 별개로 MySQL에서 확정 신청 수, 저장 카운터, 정원 초과 여부를 확인한다.
 

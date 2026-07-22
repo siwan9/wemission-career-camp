@@ -121,8 +121,11 @@ public class LectureApplicationService {
 		return lectureDraftService.findActiveDrafts(draftToken);
 	}
 
-	@Transactional
 	public void releaseDrafts(String draftToken) {
+		if (draftToken == null || draftToken.isBlank()) {
+			return;
+		}
+
 		lectureDraftService.releaseAll(draftToken);
 	}
 

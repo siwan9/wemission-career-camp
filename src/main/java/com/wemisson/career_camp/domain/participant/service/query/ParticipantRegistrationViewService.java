@@ -81,7 +81,6 @@ public class ParticipantRegistrationViewService {
 		return participantLectureEntity.getParticipantEntity().getRecruitmentEntity();
 	}
 
-	@Transactional(readOnly = true)
 	public List<?> findSelectableParticipantTypes(RecruitmentEntity recruitmentEntity) {
 		Objects.requireNonNull(recruitmentEntity, "recruitmentEntity must not be null");
 

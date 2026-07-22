@@ -91,8 +91,8 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:24}
-      minimum-idle: ${DB_POOL_MIN_IDLE:8}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:16}
+      minimum-idle: ${DB_POOL_MIN_IDLE:16}
       connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:10000}
       validation-timeout: 3000
       max-lifetime: 1800000
@@ -109,8 +109,8 @@ spring:
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     hikari:
-      maximum-pool-size: ${DB_POOL_MAX_SIZE:24}
-      minimum-idle: ${DB_POOL_MIN_IDLE:8}
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:16}
+      minimum-idle: ${DB_POOL_MIN_IDLE:16}
       connection-timeout: ${DB_CONNECTION_TIMEOUT_MS:10000}
       validation-timeout: 3000
       max-lifetime: 1800000

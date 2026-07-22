@@ -25,6 +25,9 @@ const holdSuccess = new Rate('hold_success');
 const releaseSuccess = new Rate('release_success');
 const emptyDraftAfterRelease = new Rate('empty_draft_after_release');
 const stepDuration = new Trend('journey_step_duration', true);
+const stepWaiting = new Trend('journey_step_waiting', true);
+const stepReceiving = new Trend('journey_step_receiving', true);
+const stepBlocked = new Trend('journey_step_blocked', true);
 
 export const options = {
     discardResponseBodies: true,
@@ -432,7 +435,11 @@ function getPage(path, endpoint, flow) {
 
 function timedRequest(endpoint, flow, request) {
     const response = request();
-    stepDuration.add(response.timings.duration, { endpoint, flow });
+    const tags = { endpoint, flow };
+    stepDuration.add(response.timings.duration, tags);
+    stepWaiting.add(response.timings.waiting, tags);
+    stepReceiving.add(response.timings.receiving, tags);
+    stepBlocked.add(response.timings.blocked, tags);
 
     if (response.status === 0 || response.status >= 500) {
         const status = String(response.status || 'network');

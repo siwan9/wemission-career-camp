@@ -13,7 +13,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.wemisson.career_camp.common.transaction.AfterCommitExecutor;
-import com.wemisson.career_camp.domain.participant.repository.ParticipantLectureDraftRepository;
 import com.wemisson.career_camp.domain.recruitment.dto.LectureType;
 import com.wemisson.career_camp.domain.recruitment.entity.LectureEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentEntity;
@@ -25,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 public class LectureQueryService {
 
 	private final LectureRepository lectureRepository;
-	private final ParticipantLectureDraftRepository participantLectureDraftRepository;
 	private final AfterCommitExecutor afterCommitExecutor;
 	private final Clock clock;
 	private final Cache<Long, LectureStaticCache> lectureStaticCacheByRecruitmentId = Caffeine.newBuilder()
@@ -51,20 +49,13 @@ public class LectureQueryService {
 		List<LectureStaticView> staticLectures = findStaticLectures(recruitmentEntity);
 		LocalDateTime now = LocalDateTime.now(clock);
 		Map<Long, LectureRepository.LectureAvailability> availabilityByLectureId = lectureRepository
-			.findLectureAvailabilities(recruitmentEntity)
+			.findLectureAvailabilities(recruitmentEntity, now)
 			.stream()
 			.collect(Collectors.toMap(LectureRepository.LectureAvailability::getId, Function.identity()));
-		Map<Long, Long> activeDraftCountByLectureId = participantLectureDraftRepository
-			.countActiveDraftsByLecture(recruitmentEntity, now)
-			.stream()
-			.collect(Collectors.toMap(
-				ParticipantLectureDraftRepository.LectureDraftCount::getLectureId,
-				ParticipantLectureDraftRepository.LectureDraftCount::getDraftCount
-			));
 
 		return new LectureSelection(
-			includeMorning ? toLectureViews(staticLectures, availabilityByLectureId, activeDraftCountByLectureId, LectureType.AM) : List.of(),
-			includeAfternoon ? toLectureViews(staticLectures, availabilityByLectureId, activeDraftCountByLectureId, LectureType.PM) : List.of()
+			includeMorning ? toLectureViews(staticLectures, availabilityByLectureId, LectureType.AM) : List.of(),
+			includeAfternoon ? toLectureViews(staticLectures, availabilityByLectureId, LectureType.PM) : List.of()
 		);
 	}
 
@@ -96,15 +87,13 @@ public class LectureQueryService {
 	private List<LectureView> toLectureViews(
 		List<LectureStaticView> staticLectures,
 		Map<Long, LectureRepository.LectureAvailability> availabilityByLectureId,
-		Map<Long, Long> activeDraftCountByLectureId,
 		LectureType type
 	) {
 		return staticLectures.stream()
 			.filter(lecture -> lecture.type() == type)
 			.map(lecture -> LectureView.from(
 				lecture,
-				availabilityByLectureId.get(lecture.id()),
-				activeDraftCountByLectureId.getOrDefault(lecture.id(), 0L)
+				availabilityByLectureId.get(lecture.id())
 			))
 			.sorted(this::compareOpenFirst)
 			.toList();
@@ -155,8 +144,7 @@ public class LectureQueryService {
 	) {
 		private static LectureView from(
 			LectureStaticView lecture,
-			LectureRepository.LectureAvailability availability,
-			Long draftCount
+			LectureRepository.LectureAvailability availability
 		) {
 			if (availability == null) {
 				throw new IllegalStateException("강의 상태 정보를 찾을 수 없습니다.");
@@ -172,7 +160,7 @@ public class LectureQueryService {
 				Boolean.TRUE.equals(availability.getOpen()),
 				availability.getMaxCapacity(),
 				availability.getParticipantCount(),
-				draftCount
+				availability.getDraftCount()
 			);
 		}
 

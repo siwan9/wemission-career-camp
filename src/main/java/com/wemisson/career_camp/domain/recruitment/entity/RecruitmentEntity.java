@@ -101,6 +101,10 @@ public class RecruitmentEntity {
 		return status == RecruitmentStatus.OPEN;
 	}
 
+	public boolean canAcceptApplications() {
+		return isOpen();
+	}
+
 	public boolean isWaiting() {
 		return status == RecruitmentStatus.WAITING;
 	}

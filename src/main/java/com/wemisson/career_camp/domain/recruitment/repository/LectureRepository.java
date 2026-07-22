@@ -1,5 +1,6 @@
 package com.wemisson.career_camp.domain.recruitment.repository;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -33,12 +34,18 @@ public interface LectureRepository extends JpaRepository<LectureEntity, Long> {
 		select l.id as id,
 			l.isOpen as open,
 			l.maxCapacity as maxCapacity,
-			l.participantCount as participantCount
+			l.participantCount as participantCount,
+			count(d.id) as draftCount
 		from LectureEntity l
+		left join ParticipantLectureDraftEntity d
+			on d.lectureEntity = l
+			and d.expiresAt > :now
 		where l.recruitmentEntity = :recruitmentEntity
+		group by l.id, l.isOpen, l.maxCapacity, l.participantCount
 		""")
 	List<LectureAvailability> findLectureAvailabilities(
-		@Param("recruitmentEntity") RecruitmentEntity recruitmentEntity
+		@Param("recruitmentEntity") RecruitmentEntity recruitmentEntity,
+		@Param("now") LocalDateTime now
 	);
 
 	int countByRecruitmentEntity(RecruitmentEntity recruitmentEntity);
@@ -69,5 +76,7 @@ public interface LectureRepository extends JpaRepository<LectureEntity, Long> {
 		Integer getMaxCapacity();
 
 		Integer getParticipantCount();
+
+		Long getDraftCount();
 	}
 }

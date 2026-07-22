@@ -313,10 +313,8 @@ public class LectureApplicationFinalizer {
 	private void validateRegularFinalization(FinalizeContext context) {
 		RecruitmentEntity recruitmentEntity = context.recruitmentEntity();
 
-		if (!recruitmentEntity.isOpen()
-			|| context.now().isBefore(recruitmentEntity.getStartAt())
-			|| !context.now().isBefore(recruitmentEntity.getEndAt())) {
-			throw new IllegalStateException("모집 시간이 종료되어 최종 신청할 수 없습니다.");
+		if (!recruitmentEntity.canAcceptApplications()) {
+			throw new IllegalStateException("현재 수강신청을 진행할 수 있는 모집이 아닙니다.");
 		}
 
 		context.activeDrafts().forEach(draft -> {

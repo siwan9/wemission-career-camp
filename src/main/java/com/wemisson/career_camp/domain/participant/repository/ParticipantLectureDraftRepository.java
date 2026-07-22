@@ -64,22 +64,4 @@ public interface ParticipantLectureDraftRepository extends JpaRepository<Partici
 
 	void deleteByExpiresAtBefore(LocalDateTime now);
 
-	@Query("""
-		select d.lectureEntity.id as lectureId,
-			count(d) as draftCount
-		from ParticipantLectureDraftEntity d
-		where d.recruitmentEntity = :recruitmentEntity
-			and d.expiresAt > :now
-		group by d.lectureEntity.id
-		""")
-	List<LectureDraftCount> countActiveDraftsByLecture(
-		@Param("recruitmentEntity") RecruitmentEntity recruitmentEntity,
-		@Param("now") LocalDateTime now
-	);
-
-	interface LectureDraftCount {
-		Long getLectureId();
-
-		Long getDraftCount();
-	}
 }

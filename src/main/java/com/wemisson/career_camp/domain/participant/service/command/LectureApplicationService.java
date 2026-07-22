@@ -74,7 +74,7 @@ public class LectureApplicationService {
 		LectureEntity lectureEntity = lectureRepository.findByIdForUpdate(lectureId)
 			.orElseThrow(() -> new IllegalArgumentException("존재하지 않는 특강입니다."));
 		validateRecruitmentScope(expectedRecruitmentId, participantEntity, lectureEntity);
-		validateSelectable(request, lectureEntity, allowFull, LocalDateTime.now(clock));
+		validateSelectable(request, lectureEntity, allowFull);
 		LectureDraftService.DraftSelection selection = lectureDraftService.hold(
 			participantEntity,
 			lectureEntity,
@@ -196,14 +196,11 @@ public class LectureApplicationService {
 	private void validateSelectable(
 		ParticipantCreateRequest request,
 		LectureEntity lectureEntity,
-		boolean allowFull,
-		LocalDateTime now
+		boolean allowFull
 	) {
 		RecruitmentEntity recruitmentEntity = lectureEntity.getRecruitmentEntity();
 
-		if (!allowFull && (!recruitmentEntity.isOpen()
-			|| now.isBefore(recruitmentEntity.getStartAt())
-			|| !now.isBefore(recruitmentEntity.getEndAt()))) {
+		if (!allowFull && !recruitmentEntity.canAcceptApplications()) {
 			throw new IllegalStateException("현재 수강신청을 진행할 수 있는 모집이 아닙니다.");
 		}
 		if (!allowFull && !lectureEntity.isOpen()) {

@@ -45,6 +45,7 @@ import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentChurchR
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeFixedLectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentRepository;
+import com.wemisson.career_camp.domain.recruitment.service.query.LectureQueryService;
 import com.wemisson.career_camp.domain.recruitment.service.query.RecruitmentQueryService;
 import com.wemisson.career_camp.view.ViewController;
 
@@ -66,6 +67,8 @@ class LectureApplicationConcurrencyTest {
 	private ViewController viewController;
 	@Autowired
 	private RecruitmentQueryService recruitmentQueryService;
+	@Autowired
+	private LectureQueryService lectureQueryService;
 	@Autowired
 	private RecruitmentRepository recruitmentRepository;
 	@Autowired
@@ -244,6 +247,38 @@ class LectureApplicationConcurrencyTest {
 			roomyMorningLecture,
 			LocalDateTime.now(clock)
 		)).isEqualTo(1);
+	}
+
+	@Test
+	void 강좌_가용성_조회는_유효한_점유만_신청가능인원에_반영한다() {
+		ParticipantCreateRequest request = createRequest("유효점유", "01078787878");
+		LocalDateTime now = LocalDateTime.now(clock);
+
+		holdDraft(request, null, morningLecture.getId(), "active-availability-token", false);
+		participantLectureDraftRepository.save(ParticipantLectureDraftEntity.create(
+			"expired-availability-token",
+			null,
+			recruitment,
+			anotherMorningLecture,
+			now.minusSeconds(1),
+			now.minusMinutes(4)
+		));
+
+		LectureQueryService.LectureSelection selection = lectureQueryService.findLectures(
+			recruitment,
+			true,
+			false
+		);
+		LectureQueryService.LectureView activeLecture = findLectureView(selection, morningLecture.getId());
+		LectureQueryService.LectureView expiredLecture = findLectureView(
+			selection,
+			anotherMorningLecture.getId()
+		);
+
+		assertThat(activeLecture.draftCount()).isEqualTo(1);
+		assertThat(activeLecture.getRemainingCapacity()).isZero();
+		assertThat(expiredLecture.draftCount()).isZero();
+		assertThat(expiredLecture.getRemainingCapacity()).isEqualTo(2);
 	}
 
 	@Test
@@ -460,6 +495,72 @@ class LectureApplicationConcurrencyTest {
 	}
 
 	@Test
+	void 종료_시각이_지났어도_OPEN_모집은_점유하고_최종확정할_수_있다() {
+		LocalDateTime now = LocalDateTime.now(clock);
+		recruitment.update(
+			recruitment.getName(),
+			recruitment.getDescription(),
+			recruitment.getNotice(),
+			now.minusDays(2),
+			now.minusDays(1),
+			RecruitmentStatus.OPEN,
+			now
+		);
+		recruitmentRepository.saveAndFlush(recruitment);
+		ParticipantCreateRequest request = createRequest("수동오픈", "01034343434");
+		String draftToken = "manually-open-token";
+
+		holdDraft(request, null, morningLecture.getId(), draftToken, false);
+		holdDraft(request, null, afternoonLecture.getId(), draftToken, false);
+		LectureApplicationResult result = finalizeDraft(request, null, draftToken, false);
+
+		assertThat(result.participantLectureId()).isNotNull();
+		assertThat(participantLectureRepository.findById(result.participantLectureId())).isPresent();
+	}
+
+	@Test
+	void 시작_시각_전이어도_OPEN_모집은_점유하고_최종확정할_수_있다() {
+		LocalDateTime now = LocalDateTime.now(clock);
+		recruitment.update(
+			recruitment.getName(),
+			recruitment.getDescription(),
+			recruitment.getNotice(),
+			now.plusDays(1),
+			now.plusDays(2),
+			RecruitmentStatus.OPEN,
+			now
+		);
+		recruitmentRepository.saveAndFlush(recruitment);
+		ParticipantCreateRequest request = createRequest("사전오픈", "01032323232");
+		String draftToken = "early-open-token";
+
+		holdDraft(request, null, morningLecture.getId(), draftToken, false);
+		holdDraft(request, null, afternoonLecture.getId(), draftToken, false);
+		LectureApplicationResult result = finalizeDraft(request, null, draftToken, false);
+
+		assertThat(result.participantLectureId()).isNotNull();
+		assertThat(participantLectureRepository.findById(result.participantLectureId())).isPresent();
+	}
+
+	@Test
+	void OPEN이_아닌_모집은_시간_범위와_상관없이_점유할_수_없다() {
+		LocalDateTime now = LocalDateTime.now(clock);
+		recruitment.changeStatus(RecruitmentStatus.WAITING, now);
+		recruitmentRepository.saveAndFlush(recruitment);
+		ParticipantCreateRequest request = createRequest("대기모집", "01033333333");
+
+		assertThatThrownBy(() -> holdDraft(
+			request,
+			null,
+			morningLecture.getId(),
+			"waiting-recruitment-token",
+			false
+		))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("현재 수강신청을 진행할 수 있는 모집");
+	}
+
+	@Test
 	void 수정_중인_임시점유가_만료되면_기존_신청으로_조용히_확정하지_않는다() {
 		ParticipantCreateRequest request = createRequest("수정만료", "01037373737");
 		String initialDraftToken = "expired-edit-initial-token";
@@ -571,14 +672,27 @@ class LectureApplicationConcurrencyTest {
 			session,
 			new RedirectAttributesModelMap()
 		);
-		String lectureEditView = viewController.lecture(session, new ExtendedModelMap());
+		ExtendedModelMap lectureModel = new ExtendedModelMap();
+		String lectureEditView = viewController.lecture(session, lectureModel);
 
 		assertThat(participantEditRedirect).isEqualTo("redirect:/register/edit");
 		assertThat(participantEditView).isEqualTo("register");
 		assertThat(lectureEditRedirect).isEqualTo("redirect:/lecture");
 		assertThat(lectureEditView).isEqualTo("lecture");
+		assertThat(lectureModel.get("readyToFinalize")).isEqualTo(true);
 		assertThat(participantLookupService.findLookupEditTarget(participantLectureId).request())
 			.isEqualTo(request);
+	}
+
+	private LectureQueryService.LectureView findLectureView(
+		LectureQueryService.LectureSelection selection,
+		Long lectureId
+	) {
+		return selection.morningLectures()
+			.stream()
+			.filter(lecture -> lecture.id().equals(lectureId))
+			.findFirst()
+			.orElseThrow();
 	}
 
 	private ParticipantLectureDraftResult holdDraft(

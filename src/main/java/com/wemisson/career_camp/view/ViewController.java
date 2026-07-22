@@ -345,17 +345,15 @@ public class ViewController {
 		);
 		model.addAttribute("morningLectures", lectureSelection.morningLectures());
 		model.addAttribute("afternoonLectures", lectureSelection.afternoonLectures());
-		addAppliedLectureIds(session, model);
+		ParticipantRegistrationViewService.SelectedLectureIds appliedLectureIds = addAppliedLectureIds(
+			session,
+			model
+		);
 		String draftToken = participantSession.getOrCreateDraftToken(session);
-		addDraftLectureIds(draftToken, model);
+		List<ParticipantLectureDraftEntity> activeDrafts = addDraftLectureIds(draftToken, model);
 		model.addAttribute(
 			"readyToFinalize",
-				lectureApplicationService.isReadyToFinalize(
-					request,
-					participantSession.participantLectureId(session),
-					recruitmentEntity.getId(),
-					draftToken
-			)
+			isReadyToFinalize(registrationContext, appliedLectureIds, activeDrafts)
 		);
 		model.addAttribute(
 			"editLectureMode",
@@ -365,7 +363,10 @@ public class ViewController {
 		return "lecture";
 	}
 
-	private void addAppliedLectureIds(HttpSession session, Model model) {
+	private ParticipantRegistrationViewService.SelectedLectureIds addAppliedLectureIds(
+		HttpSession session,
+		Model model
+	) {
 		ParticipantRegistrationViewService.SelectedLectureIds selectedLectureIds =
 			participantRegistrationViewService.findSelectedLectureIds(
 				participantSession.participantLectureId(session)
@@ -377,9 +378,11 @@ public class ViewController {
 		if (selectedLectureIds.afternoonLectureId() != null) {
 			model.addAttribute("selectedAfternoonLectureId", selectedLectureIds.afternoonLectureId());
 		}
+
+		return selectedLectureIds;
 	}
 
-	private void addDraftLectureIds(String draftToken, Model model) {
+	private List<ParticipantLectureDraftEntity> addDraftLectureIds(String draftToken, Model model) {
 		List<ParticipantLectureDraftEntity> activeDrafts = lectureApplicationService.findActiveDrafts(draftToken);
 
 		model.addAttribute("hasDraftSelection", !activeDrafts.isEmpty());
@@ -403,6 +406,29 @@ public class ViewController {
 			model.addAttribute("draftAfternoonLectureId", draft.getLectureEntity().getId());
 			model.addAttribute("draftAfternoonExpiresAt", draft.getExpiresAt());
 		});
+
+		return activeDrafts;
+	}
+
+	private boolean isReadyToFinalize(
+		RegistrationContext registrationContext,
+		ParticipantRegistrationViewService.SelectedLectureIds appliedLectureIds,
+		List<ParticipantLectureDraftEntity> activeDrafts
+	) {
+		boolean hasMorningLecture = appliedLectureIds.morningLectureId() != null
+			|| hasDraftForType(activeDrafts, LectureType.AM);
+		boolean hasAfternoonLecture = appliedLectureIds.afternoonLectureId() != null
+			|| hasDraftForType(activeDrafts, LectureType.PM);
+
+		return (!registrationContext.canSelectMorningLecture() || hasMorningLecture)
+			&& (!registrationContext.canSelectAfternoonLecture() || hasAfternoonLecture);
+	}
+
+	private boolean hasDraftForType(
+		List<ParticipantLectureDraftEntity> activeDrafts,
+		LectureType lectureType
+	) {
+		return activeDrafts.stream().anyMatch(draft -> draft.getLectureType() == lectureType);
 	}
 
 	private RecruitmentEntity findLectureFlowRecruitment(HttpSession session) {

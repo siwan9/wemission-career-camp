@@ -2,6 +2,7 @@ package com.wemisson.career_camp.domain.admin.service.command;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.tuple;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
@@ -33,11 +34,13 @@ import com.wemisson.career_camp.domain.recruitment.entity.LectureEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentChurchEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeEntity;
+import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeFixedLectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.LectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentChurchRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentRepository;
 import com.wemisson.career_camp.domain.recruitment.scheduler.RecruitmentStatusScheduler;
+import com.wemisson.career_camp.domain.recruitment.service.query.LectureCatalogQueryService;
 import com.wemisson.career_camp.domain.recruitment.service.query.RecruitmentQueryService;
 
 @SpringBootTest
@@ -59,6 +62,8 @@ class AdminRecruitmentCommandServiceTest {
 	@Autowired
 	private RecruitmentParticipantTypeRepository recruitmentParticipantTypeRepository;
 	@Autowired
+	private RecruitmentParticipantTypeFixedLectureRepository fixedLectureRepository;
+	@Autowired
 	private ParticipantTypeRepository participantTypeRepository;
 	@Autowired
 	private ParticipantRepository participantRepository;
@@ -70,11 +75,14 @@ class AdminRecruitmentCommandServiceTest {
 	private RecruitmentStatusScheduler recruitmentStatusScheduler;
 	@Autowired
 	private LectureApplicationService lectureApplicationService;
+	@Autowired
+	private LectureCatalogQueryService lectureCatalogQueryService;
 
 	private RecruitmentEntity recruitment;
 	private ParticipantTypeEntity studentType;
 	private RecruitmentChurchEntity church;
 	private LectureEntity morningLecture;
+	private RecruitmentParticipantTypeEntity studentRule;
 
 	@BeforeEach
 	void setUp() {
@@ -92,7 +100,7 @@ class AdminRecruitmentCommandServiceTest {
 		church = recruitmentChurchRepository.save(
 			RecruitmentChurchEntity.create(recruitment, "테스트 교회", 1)
 		);
-		recruitmentParticipantTypeRepository.save(
+		studentRule = recruitmentParticipantTypeRepository.save(
 			RecruitmentParticipantTypeEntity.create(recruitment, studentType, true, false)
 		);
 		morningLecture = lectureRepository.save(
@@ -247,6 +255,35 @@ class AdminRecruitmentCommandServiceTest {
 	}
 
 	@Test
+	void 스케줄러는_시작시각이_되면_대기중_모집을_즉시_연다() {
+		recruitment.changeStatus(RecruitmentStatus.WAITING);
+		recruitmentRepository.saveAndFlush(recruitment);
+
+		recruitmentStatusScheduler.synchronizeRecruitmentStatus();
+
+		assertThat(recruitmentRepository.findById(recruitment.getId()).orElseThrow().getStatus())
+			.isEqualTo(RecruitmentStatus.OPEN);
+	}
+
+	@Test
+	void 스케줄러는_종료시각이_되면_모집중_모집을_즉시_닫는다() {
+		recruitment.update(
+			recruitment.getName(),
+			recruitment.getDescription(),
+			recruitment.getNotice(),
+			LocalDateTime.now(clock).minusDays(1),
+			LocalDateTime.now(clock).minusSeconds(1),
+			RecruitmentStatus.OPEN
+		);
+		recruitmentRepository.saveAndFlush(recruitment);
+
+		recruitmentStatusScheduler.synchronizeRecruitmentStatus();
+
+		assertThat(recruitmentRepository.findById(recruitment.getId()).orElseThrow().getStatus())
+			.isEqualTo(RecruitmentStatus.CLOSED);
+	}
+
+	@Test
 	void 서로_다른_모집을_동시에_열어도_하나의_모집만_열린다() throws Exception {
 		RecruitmentEntity otherRecruitment = recruitmentRepository.save(RecruitmentEntity.create(
 			"다른 모집",
@@ -348,6 +385,172 @@ class AdminRecruitmentCommandServiceTest {
 		}
 	}
 
+	@Test
+	void 전체강좌에_처음_들어가면_학생_타입을_기본으로_선택한다() {
+		ParticipantTypeEntity teacherType = participantTypeRepository.save(
+			ParticipantTypeEntity.from(ParticipantType.TEACHER)
+		);
+		recruitmentParticipantTypeRepository.save(
+			RecruitmentParticipantTypeEntity.create(recruitment, teacherType, true, true)
+		);
+		recruitmentQueryService.evictRecruitmentCaches(recruitment.getId());
+
+		LectureCatalogQueryService.LectureCatalogView catalog = lectureCatalogQueryService.findLectureCatalog(
+			recruitment,
+			null
+		);
+
+		assertThat(catalog.selectedParticipantTypeId()).isEqualTo(studentType.getId());
+		assertThat(catalog.participantTypes())
+			.extracting(LectureCatalogQueryService.ParticipantTypeOption::description)
+			.containsExactly("학생", "교사");
+	}
+
+	@Test
+	void 고정_강좌를_저장하면_타입별_전체강좌에는_지정한_오전오후_강좌만_노출된다() {
+		LectureEntity otherMorningLecture = lectureRepository.save(
+			LectureEntity.create(recruitment, "다른 오전", "강사", "설명", LectureType.AM, true, 3, 2)
+		);
+		LectureEntity afternoonLecture = lectureRepository.save(
+			LectureEntity.create(recruitment, "고정 오후", "강사", "설명", LectureType.PM, false, 0, 1)
+		);
+		LectureEntity otherAfternoonLecture = lectureRepository.save(
+			LectureEntity.create(recruitment, "다른 오후", "강사", "설명", LectureType.PM, true, 3, 2)
+		);
+
+		adminRecruitmentCommandService.updateParticipantTypeRule(
+			recruitment.getId(),
+			studentRule.getId(),
+			false,
+			false,
+			morningLecture.getId(),
+			afternoonLecture.getId()
+		);
+
+		assertThat(fixedLectureRepository.findByRecruitmentEntityWithRelations(recruitment))
+			.extracting(
+				fixedLecture -> fixedLecture.getLectureType(),
+				fixedLecture -> fixedLecture.getLectureEntity().getId()
+			)
+			.containsExactly(
+				tuple(LectureType.AM, morningLecture.getId()),
+				tuple(LectureType.PM, afternoonLecture.getId())
+			);
+
+		LectureCatalogQueryService.LectureCatalogView catalog = lectureCatalogQueryService.findLectureCatalog(
+			recruitment,
+			studentType.getId()
+		);
+
+		assertThat(catalog.fixedLectures()).isTrue();
+		assertThat(catalog.lectureSelection().morningLectures())
+			.extracting(lecture -> lecture.id())
+			.containsExactly(morningLecture.getId())
+			.doesNotContain(otherMorningLecture.getId());
+		assertThat(catalog.lectureSelection().afternoonLectures())
+			.extracting(lecture -> lecture.id())
+			.containsExactly(afternoonLecture.getId());
+
+		adminRecruitmentCommandService.updateParticipantTypeRule(
+			recruitment.getId(),
+			studentRule.getId(),
+			false,
+			false,
+			otherMorningLecture.getId(),
+			otherAfternoonLecture.getId()
+		);
+		LectureCatalogQueryService.LectureCatalogView refreshedCatalog = lectureCatalogQueryService
+			.findLectureCatalog(recruitment, studentType.getId());
+
+		assertThat(refreshedCatalog.lectureSelection().morningLectures())
+			.extracting(lecture -> lecture.id())
+			.containsExactly(otherMorningLecture.getId());
+		assertThat(refreshedCatalog.lectureSelection().afternoonLectures())
+			.extracting(lecture -> lecture.id())
+			.containsExactly(otherAfternoonLecture.getId());
+	}
+
+	@Test
+	void 직접선택을_다시_허용하면_기존_고정강좌를_제거한다() {
+		LectureEntity afternoonLecture = lectureRepository.save(
+			LectureEntity.create(recruitment, "고정 오후", "강사", "설명", LectureType.PM, false, 0, 1)
+		);
+		adminRecruitmentCommandService.updateParticipantTypeRule(
+			recruitment.getId(),
+			studentRule.getId(),
+			false,
+			false,
+			morningLecture.getId(),
+			afternoonLecture.getId()
+		);
+
+		adminRecruitmentCommandService.updateParticipantTypeRule(
+			recruitment.getId(),
+			studentRule.getId(),
+			true,
+			false,
+			null,
+			null
+		);
+
+		assertThat(fixedLectureRepository.findByRecruitmentEntityWithRelations(recruitment)).isEmpty();
+	}
+
+	@Test
+	void 고정_강좌는_설정한_시간대와_모집에_속해야한다() {
+		LectureEntity afternoonLecture = lectureRepository.save(
+			LectureEntity.create(recruitment, "오후", "강사", "설명", LectureType.PM, false, 0, 1)
+		);
+
+		assertThatThrownBy(() -> adminRecruitmentCommandService.updateParticipantTypeRule(
+			recruitment.getId(),
+			studentRule.getId(),
+			false,
+			false,
+			afternoonLecture.getId(),
+			morningLecture.getId()
+		))
+			.isInstanceOf(IllegalArgumentException.class)
+			.hasMessageContaining("오전 강의");
+
+		assertThat(fixedLectureRepository.findByRecruitmentEntityWithRelations(recruitment)).isEmpty();
+	}
+
+	@Test
+	void 고정_강좌로_사용중인_강의는_삭제하거나_시간대를_바꿀_수_없다() {
+		LectureEntity afternoonLecture = lectureRepository.save(
+			LectureEntity.create(recruitment, "고정 오후", "강사", "설명", LectureType.PM, false, 0, 1)
+		);
+		adminRecruitmentCommandService.updateParticipantTypeRule(
+			recruitment.getId(),
+			studentRule.getId(),
+			false,
+			false,
+			morningLecture.getId(),
+			afternoonLecture.getId()
+		);
+
+		assertThatThrownBy(() -> adminRecruitmentCommandService.deleteLecture(
+			recruitment.getId(),
+			morningLecture.getId()
+		))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("고정 강좌");
+
+		assertThatThrownBy(() -> adminRecruitmentCommandService.updateLecture(
+			recruitment.getId(),
+			morningLecture.getId(),
+			"오전",
+			"강사",
+			"설명",
+			LectureType.PM,
+			true,
+			3
+		))
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessageContaining("고정 강좌");
+	}
+
 	private boolean changeStatusAfterSignal(
 		CountDownLatch ready,
 		CountDownLatch start,
@@ -368,6 +571,7 @@ class AdminRecruitmentCommandServiceTest {
 		participantLectureDraftRepository.deleteAll();
 		participantLectureRepository.deleteAll();
 		participantRepository.deleteAll();
+		fixedLectureRepository.deleteAll();
 		lectureRepository.deleteAll();
 		recruitmentParticipantTypeRepository.deleteAll();
 		recruitmentChurchRepository.deleteAll();

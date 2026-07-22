@@ -68,4 +68,8 @@ public class RecruitmentParticipantTypeEntity {
 	public boolean canSelectAfternoonLecture() {
 		return Boolean.TRUE.equals(canSelectAfternoonLecture);
 	}
+
+	public boolean usesFixedLectures() {
+		return !canSelectMorningLecture() && !canSelectAfternoonLecture();
+	}
 }

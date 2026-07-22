@@ -242,6 +242,10 @@ public class RecruitmentQueryService {
 		boolean canSelectMorningLecture,
 		boolean canSelectAfternoonLecture
 	) {
+		public boolean usesFixedLectures() {
+			return !canSelectMorningLecture && !canSelectAfternoonLecture;
+		}
+
 		private static ParticipantTypeRule from(RecruitmentParticipantTypeEntity rule) {
 			return new ParticipantTypeRule(
 				rule.getParticipantTypeEntity().getId(),

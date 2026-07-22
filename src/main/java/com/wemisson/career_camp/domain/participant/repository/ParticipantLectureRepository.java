@@ -46,6 +46,17 @@ public interface ParticipantLectureRepository extends JpaRepository<ParticipantL
 		select pl
 		from ParticipantLectureEntity pl
 			join fetch pl.participantEntity p
+			join fetch p.recruitmentEntity
+			join fetch p.recruitmentChurchEntity
+			join fetch p.participantTypeEntity
+		where pl.id = :id
+		""")
+	Optional<ParticipantLectureEntity> findByIdWithLookupEditRelations(@Param("id") Long id);
+
+	@Query("""
+		select pl
+		from ParticipantLectureEntity pl
+			join fetch pl.participantEntity p
 			join fetch p.recruitmentChurchEntity
 			join fetch p.participantTypeEntity
 		where pl.morningLectureEntity = :lectureEntity

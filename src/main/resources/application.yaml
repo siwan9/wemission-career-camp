@@ -61,6 +61,12 @@ server:
         http-only: true
         same-site: lax
 
+career-camp:
+  admin:
+    session-timeout-seconds: ${ADMIN_SESSION_TIMEOUT_SECONDS:-1}
+  recruitment:
+    status-sync-interval-ms: ${RECRUITMENT_STATUS_SYNC_INTERVAL_MS:1000}
+
 management:
   endpoints:
     web:

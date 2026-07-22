@@ -194,12 +194,19 @@ public class AdminRecruitmentController {
 		@ModelAttribute AdminParticipantTypeRuleRequest request,
 		RedirectAttributes redirectAttributes
 	) {
-		adminRecruitmentCommandService.updateParticipantTypeRule(
-			recruitmentId,
-			ruleId,
-			request.morningLectureSelectable(),
-			request.afternoonLectureSelectable()
-		);
+		try {
+			adminRecruitmentCommandService.updateParticipantTypeRule(
+				recruitmentId,
+				ruleId,
+				request.morningLectureSelectable(),
+				request.afternoonLectureSelectable(),
+				request.fixedMorningLectureId(),
+				request.fixedAfternoonLectureId()
+			);
+		} catch (IllegalArgumentException | IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("toastMessage", e.getMessage());
+			return "redirect:/admin/recruitments/" + recruitmentId + "/settings";
+		}
 		redirectAttributes.addFlashAttribute("toastMessage", "참가자 타입 설정이 저장되었습니다.");
 
 		return "redirect:/admin/recruitments/" + recruitmentId + "/settings";

@@ -17,8 +17,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.ui.ExtendedModelMap;
+import org.springframework.web.servlet.mvc.support.RedirectAttributesModelMap;
 
+import com.wemisson.career_camp.domain.participant.controller.ParticipantLookupController;
 import com.wemisson.career_camp.domain.participant.dto.ParticipantCreateRequest;
 import com.wemisson.career_camp.domain.participant.dto.ParticipantLectureDraftResult;
 import com.wemisson.career_camp.domain.participant.dto.ParticipantType;
@@ -29,6 +33,7 @@ import com.wemisson.career_camp.domain.participant.repository.ParticipantLecture
 import com.wemisson.career_camp.domain.participant.repository.ParticipantLectureRepository;
 import com.wemisson.career_camp.domain.participant.repository.ParticipantRepository;
 import com.wemisson.career_camp.domain.participant.repository.ParticipantTypeRepository;
+import com.wemisson.career_camp.domain.participant.session.ParticipantSession;
 import com.wemisson.career_camp.domain.recruitment.dto.LectureType;
 import com.wemisson.career_camp.domain.recruitment.dto.RecruitmentStatus;
 import com.wemisson.career_camp.domain.recruitment.entity.LectureEntity;
@@ -38,8 +43,10 @@ import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipant
 import com.wemisson.career_camp.domain.recruitment.repository.LectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentChurchRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeRepository;
+import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeFixedLectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentRepository;
 import com.wemisson.career_camp.domain.recruitment.service.query.RecruitmentQueryService;
+import com.wemisson.career_camp.view.ViewController;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -52,6 +59,12 @@ class LectureApplicationConcurrencyTest {
 	@Autowired
 	private ParticipantLookupService participantLookupService;
 	@Autowired
+	private ParticipantLookupController participantLookupController;
+	@Autowired
+	private ParticipantSession participantSession;
+	@Autowired
+	private ViewController viewController;
+	@Autowired
 	private RecruitmentQueryService recruitmentQueryService;
 	@Autowired
 	private RecruitmentRepository recruitmentRepository;
@@ -61,6 +74,8 @@ class LectureApplicationConcurrencyTest {
 	private RecruitmentChurchRepository recruitmentChurchRepository;
 	@Autowired
 	private RecruitmentParticipantTypeRepository recruitmentParticipantTypeRepository;
+	@Autowired
+	private RecruitmentParticipantTypeFixedLectureRepository fixedLectureRepository;
 	@Autowired
 	private ParticipantTypeRepository participantTypeRepository;
 	@Autowired
@@ -532,6 +547,38 @@ class LectureApplicationConcurrencyTest {
 		assertThat(lectureRepository.findById(afternoonLecture.getId()).orElseThrow().getParticipantCount()).isZero();
 	}
 
+	@Test
+	void 조회한_신청의_인적사항과_수강정보_수정화면으로_정상_이동한다() {
+		ParticipantCreateRequest request = createRequest("조회수정", "01012345678");
+		String draftToken = "lookup-edit-token";
+
+		holdDraft(request, null, morningLecture.getId(), draftToken, false);
+		holdDraft(request, null, afternoonLecture.getId(), draftToken, false);
+		Long participantLectureId = finalizeDraft(request, null, draftToken, false).participantLectureId();
+		MockHttpSession session = new MockHttpSession();
+		participantSession.saveLookupResultIds(session, List.of(participantLectureId));
+
+		String participantEditRedirect = participantLookupController.editParticipant(
+			participantLectureId,
+			session,
+			new RedirectAttributesModelMap()
+		);
+		String participantEditView = viewController.editRegister(new ExtendedModelMap(), session);
+		String lectureEditRedirect = participantLookupController.editLecture(
+			participantLectureId,
+			session,
+			new RedirectAttributesModelMap()
+		);
+		String lectureEditView = viewController.lecture(session, new ExtendedModelMap());
+
+		assertThat(participantEditRedirect).isEqualTo("redirect:/register/edit");
+		assertThat(participantEditView).isEqualTo("register");
+		assertThat(lectureEditRedirect).isEqualTo("redirect:/lecture");
+		assertThat(lectureEditView).isEqualTo("lecture");
+		assertThat(participantLookupService.findLookupEditTarget(participantLectureId).request())
+			.isEqualTo(request);
+	}
+
 	private ParticipantLectureDraftResult holdDraft(
 		ParticipantCreateRequest request,
 		Long participantLectureId,
@@ -651,6 +698,7 @@ class LectureApplicationConcurrencyTest {
 		participantLectureDraftRepository.deleteAll();
 		participantLectureRepository.deleteAll();
 		participantRepository.deleteAll();
+		fixedLectureRepository.deleteAll();
 		lectureRepository.deleteAll();
 		recruitmentParticipantTypeRepository.deleteAll();
 		recruitmentChurchRepository.deleteAll();

@@ -20,16 +20,26 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RecruitmentStatusScheduler {
 
+	private static final List<RecruitmentStatus> ACTIVE_RECRUITMENT_STATUSES = List.of(
+		RecruitmentStatus.OPEN,
+		RecruitmentStatus.WAITING
+	);
+
 	private final RecruitmentRepository recruitmentRepository;
 	private final RecruitmentQueryService recruitmentService;
 	private final RecruitmentStatusPolicy recruitmentStatusPolicy;
 	private final Clock clock;
 
-	@Scheduled(fixedDelay = 60_000, initialDelay = 0)
+	@Scheduled(
+		fixedRateString = "${career-camp.recruitment.status-sync-interval-ms:1000}",
+		initialDelay = 0
+	)
 	@Transactional
 	public void synchronizeRecruitmentStatus() {
 		LocalDateTime now = LocalDateTime.now(clock);
-		List<RecruitmentEntity> recruitments = recruitmentRepository.findAllForUpdateOrderByIdAsc();
+		List<RecruitmentEntity> recruitments = recruitmentRepository.findByStatusInForUpdateOrderByIdAsc(
+			ACTIVE_RECRUITMENT_STATUSES
+		);
 
 		for (RecruitmentEntity recruitment : recruitments) {
 			if ((recruitment.isOpen() || recruitment.isWaiting()) && !now.isBefore(recruitment.getEndAt())) {

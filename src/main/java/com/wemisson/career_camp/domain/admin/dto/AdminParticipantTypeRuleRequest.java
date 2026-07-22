@@ -2,7 +2,9 @@ package com.wemisson.career_camp.domain.admin.dto;
 
 public record AdminParticipantTypeRuleRequest(
 	Boolean canSelectMorningLecture,
-	Boolean canSelectAfternoonLecture
+	Boolean canSelectAfternoonLecture,
+	Long fixedMorningLectureId,
+	Long fixedAfternoonLectureId
 ) {
 	public boolean morningLectureSelectable() {
 		return Boolean.TRUE.equals(canSelectMorningLecture);

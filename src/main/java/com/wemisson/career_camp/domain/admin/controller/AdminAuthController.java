@@ -2,6 +2,7 @@ package com.wemisson.career_camp.domain.admin.controller;
 
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -23,6 +24,9 @@ public class AdminAuthController {
 	public static final String ADMIN_NAME_SESSION_KEY = "adminName";
 
 	private final AdminAuthService adminAuthService;
+
+	@Value("${career-camp.admin.session-timeout-seconds:-1}")
+	private int adminSessionTimeoutSeconds;
 
 	@GetMapping("/admin/login")
 	public String adminLogin() {
@@ -49,6 +53,7 @@ public class AdminAuthController {
 
 		session.setAttribute(ADMIN_ID_SESSION_KEY, admin.id());
 		session.setAttribute(ADMIN_NAME_SESSION_KEY, admin.name());
+		session.setMaxInactiveInterval(adminSessionTimeoutSeconds);
 
 		return ResponseEntity.ok(Map.of(
 			"success", true,

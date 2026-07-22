@@ -2,6 +2,7 @@ package com.wemisson.career_camp.domain.admin.service.query;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -23,8 +24,10 @@ import com.wemisson.career_camp.domain.recruitment.entity.LectureEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentChurchEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeEntity;
+import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeFixedLectureEntity;
 import com.wemisson.career_camp.domain.recruitment.repository.LectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentChurchRepository;
+import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeFixedLectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentRepository;
 
@@ -41,6 +44,7 @@ public class AdminRecruitmentQueryService {
 	private final LectureRepository lectureRepository;
 	private final RecruitmentChurchRepository recruitmentChurchRepository;
 	private final RecruitmentParticipantTypeRepository recruitmentParticipantTypeRepository;
+	private final RecruitmentParticipantTypeFixedLectureRepository fixedLectureRepository;
 
 	@Transactional(readOnly = true)
 	public ParticipantsView findParticipantsView(
@@ -184,12 +188,16 @@ public class AdminRecruitmentQueryService {
 	@Transactional
 	public SettingsView findSettingsView(Long recruitmentId) {
 		RecruitmentEntity recruitmentEntity = findRecruitment(recruitmentId);
+		List<RecruitmentParticipantTypeEntity> participantTypeRules = ensureFixedParticipantTypeRules(
+			recruitmentEntity
+		);
 
 		return new SettingsView(
 			recruitmentEntity,
 			lectureRepository.findByRecruitmentEntityOrderByTypeAscSortOrderAscIdAsc(recruitmentEntity),
 			recruitmentChurchRepository.findByRecruitmentEntityOrderBySortOrderAscIdAsc(recruitmentEntity),
-			ensureFixedParticipantTypeRules(recruitmentEntity)
+			participantTypeRules,
+			findFixedLectureSelections(recruitmentEntity, participantTypeRules)
 		);
 	}
 
@@ -294,6 +302,38 @@ public class AdminRecruitmentQueryService {
 			.stream()
 			.sorted(Comparator.comparing(rule -> rule.getParticipantTypeEntity().isStudent() ? 0 : 1))
 			.toList();
+	}
+
+	private Map<Long, FixedLectureSelection> findFixedLectureSelections(
+		RecruitmentEntity recruitmentEntity,
+		List<RecruitmentParticipantTypeEntity> participantTypeRules
+	) {
+		Map<Long, FixedLectureSelection> selectionsByRuleId = new HashMap<>();
+		participantTypeRules.forEach(rule -> selectionsByRuleId.put(rule.getId(), FixedLectureSelection.empty()));
+
+		fixedLectureRepository.findByRecruitmentEntityWithRelations(recruitmentEntity)
+			.forEach(fixedLecture -> mergeFixedLecture(selectionsByRuleId, fixedLecture));
+
+		return Map.copyOf(selectionsByRuleId);
+	}
+
+	private void mergeFixedLecture(
+		Map<Long, FixedLectureSelection> selectionsByRuleId,
+		RecruitmentParticipantTypeFixedLectureEntity fixedLecture
+	) {
+		Long ruleId = fixedLecture.getRecruitmentParticipantTypeEntity().getId();
+		FixedLectureSelection currentSelection = selectionsByRuleId.getOrDefault(
+			ruleId,
+			FixedLectureSelection.empty()
+		);
+		Long lectureId = fixedLecture.getLectureEntity().getId();
+
+		selectionsByRuleId.put(
+			ruleId,
+			fixedLecture.getLectureType() == LectureType.AM
+				? currentSelection.withMorningLecture(lectureId)
+				: currentSelection.withAfternoonLecture(lectureId)
+		);
 	}
 
 	private LectureEntity selectLecture(
@@ -500,8 +540,26 @@ public class AdminRecruitmentQueryService {
 		RecruitmentEntity recruitment,
 		List<LectureEntity> lectures,
 		List<RecruitmentChurchEntity> churches,
-		List<RecruitmentParticipantTypeEntity> participantTypeRules
+		List<RecruitmentParticipantTypeEntity> participantTypeRules,
+		Map<Long, FixedLectureSelection> fixedLecturesByRuleId
 	) {
+	}
+
+	public record FixedLectureSelection(
+		Long morningLectureId,
+		Long afternoonLectureId
+	) {
+		private static FixedLectureSelection empty() {
+			return new FixedLectureSelection(null, null);
+		}
+
+		private FixedLectureSelection withMorningLecture(Long lectureId) {
+			return new FixedLectureSelection(lectureId, afternoonLectureId);
+		}
+
+		private FixedLectureSelection withAfternoonLecture(Long lectureId) {
+			return new FixedLectureSelection(morningLectureId, lectureId);
+		}
 	}
 
 	public record ExcelSource(

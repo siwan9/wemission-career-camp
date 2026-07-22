@@ -471,6 +471,53 @@ body {
 .lecture-card .card-text,
 .lectureEntity-card .card-text {
     white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.lecture-catalog-filter {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin: 8px 0 18px;
+}
+
+.lecture-type-filter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 15px;
+    border: 1px solid #cbd5e1;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #495057;
+    font-size: .92rem;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.lecture-type-filter-badge:hover,
+.lecture-type-filter-badge:focus-visible {
+    border-color: #0d6efd;
+    color: #0b5ed7;
+}
+
+.lecture-type-filter-badge.is-active {
+    border-color: #0d6efd;
+    background: #0d6efd;
+    color: #ffffff;
+}
+
+.fixed-lecture-catalog-notice {
+    margin: 0 0 20px;
+    padding: 12px 14px;
+    border-left: 4px solid #198754;
+    background: #f1faf5;
+    color: #146c43;
+    font-size: .92rem;
+    font-weight: 700;
+    line-height: 1.55;
 }
 
 .lecture-speaker-line {

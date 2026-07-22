@@ -120,9 +120,10 @@
                 th:unless="${#lists.isEmpty(participantTypeRules)}">
             <article
                     class="participant-type-rule-row"
-                    th:each="rule : ${participantTypeRules}">
+                    th:each="rule : ${participantTypeRules}"
+                    th:with="fixedLectures=${fixedLecturesByRuleId.get(rule.id)}">
                 <div class="participant-type-rule-title">
-                    <strong th:text="${rule.participantTypeEntity.type.name() == 'STUDENT' ? '학생' : '교사'}">
+                    <strong th:text="${rule.participantTypeEntity.type.description}">
                         학생
                     </strong>
                 </div>
@@ -131,22 +132,73 @@
                         data-participant-type-rule-form
                         method="post"
                         th:action="@{/admin/recruitments/{recruitmentId}/participant-types/{ruleId}(recruitmentId=${recruitment.id},ruleId=${rule.id})}">
-                    <label class="settings-check">
-                        <input
-                                type="checkbox"
-                                name="canSelectMorningLecture"
-                                value="true"
-                                th:checked="${rule.canSelectMorningLecture}">
-                        오전 강의 선택
-                    </label>
-                    <label class="settings-check">
-                        <input
-                                type="checkbox"
-                                name="canSelectAfternoonLecture"
-                                value="true"
-                                th:checked="${rule.canSelectAfternoonLecture}">
-                        오후 강의 선택
-                    </label>
+                    <div class="participant-type-rule-options">
+                        <label class="settings-check">
+                            <input
+                                    type="checkbox"
+                                    name="canSelectMorningLecture"
+                                    value="true"
+                                    th:checked="${rule.canSelectMorningLecture}">
+                            오전 강의 직접 선택
+                        </label>
+                        <label class="settings-check">
+                            <input
+                                    type="checkbox"
+                                    name="canSelectAfternoonLecture"
+                                    value="true"
+                                    th:checked="${rule.canSelectAfternoonLecture}">
+                            오후 강의 직접 선택
+                        </label>
+                    </div>
+                    <button
+                            type="submit"
+                            class="participant-type-rule-save">
+                        설정 저장
+                    </button>
+                    <div
+                            class="fixed-lecture-fields"
+                            data-fixed-lecture-fields
+                            th:hidden="${!rule.usesFixedLectures()}">
+                        <label>
+                            고정 오전 강의
+                            <select
+                                    name="fixedMorningLectureId"
+                                    data-fixed-lecture-select
+                                    th:disabled="${!rule.usesFixedLectures()}"
+                                    th:required="${rule.usesFixedLectures()}">
+                                <option value="">강의를 선택하세요</option>
+                                <option
+                                        th:each="lecture : ${lectures}"
+                                        th:if="${lecture.type.name() == 'AM'}"
+                                        th:value="${lecture.id}"
+                                        th:selected="${fixedLectures != null && lecture.id.equals(fixedLectures.morningLectureId)}"
+                                        th:text="${lecture.speakerName + ' · ' + lecture.speakerJob}">
+                                    오전 강의
+                                </option>
+                            </select>
+                        </label>
+                        <label>
+                            고정 오후 강의
+                            <select
+                                    name="fixedAfternoonLectureId"
+                                    data-fixed-lecture-select
+                                    th:disabled="${!rule.usesFixedLectures()}"
+                                    th:required="${rule.usesFixedLectures()}">
+                                <option value="">강의를 선택하세요</option>
+                                <option
+                                        th:each="lecture : ${lectures}"
+                                        th:if="${lecture.type.name() == 'PM'}"
+                                        th:value="${lecture.id}"
+                                        th:selected="${fixedLectures != null && lecture.id.equals(fixedLectures.afternoonLectureId)}"
+                                        th:text="${lecture.speakerName + ' · ' + lecture.speakerJob}">
+                                    오후 강의
+                                </option>
+                            </select>
+                        </label>
+                        <p class="fixed-lecture-help">
+                            오전·오후 직접 선택을 모두 끄면 이 강좌가 해당 참가자 타입의 고정 편성으로 표시됩니다.
+                        </p>
+                    </div>
                 </form>
             </article>
         </div>
@@ -630,7 +682,7 @@
                 });
 
                 try {
-                    await fetch(reorderUrl, {
+                    const response = await fetch(reorderUrl, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
@@ -638,6 +690,14 @@
                         },
                         body
                     });
+
+                    if (window.handleAdminSessionExpiry && await window.handleAdminSessionExpiry(response)) {
+                        return;
+                    }
+
+                    if (!response.ok) {
+                        throw new Error('request failed');
+                    }
                 } catch (error) {
                     alert(config.errorMessage);
                 }
@@ -758,6 +818,10 @@
                         body: formData
                     });
 
+                    if (window.handleAdminSessionExpiry && await window.handleAdminSessionExpiry(response)) {
+                        return;
+                    }
+
                     if (!response.ok) {
                         throw new Error(await response.text() || 'request failed');
                     }
@@ -775,33 +839,24 @@
 
     function setupParticipantTypeRuleToggles(signal) {
         document.querySelectorAll('[data-participant-type-rule-form]').forEach(function (form) {
-            form.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
-                checkbox.addEventListener('change', async function () {
-                    const formData = new FormData(form);
+            const morningCheckbox = form.querySelector('[name="canSelectMorningLecture"]');
+            const afternoonCheckbox = form.querySelector('[name="canSelectAfternoonLecture"]');
+            const fixedLectureFields = form.querySelector('[data-fixed-lecture-fields]');
+            const fixedLectureSelects = form.querySelectorAll('[data-fixed-lecture-select]');
 
-                    checkbox.disabled = true;
+            function synchronizeFixedLectureFields() {
+                const usesFixedLectures = !morningCheckbox.checked && !afternoonCheckbox.checked;
 
-                    try {
-                        const response = await fetch(form.action, {
-                            method: 'POST',
-                            headers: {
-                                'X-Requested-With': 'XMLHttpRequest'
-                            },
-                            body: formData
-                        });
+                fixedLectureFields.hidden = !usesFixedLectures;
+                fixedLectureSelects.forEach(function (select) {
+                    select.disabled = !usesFixedLectures;
+                    select.required = usesFixedLectures;
+                });
+            }
 
-                        if (!response.ok) {
-                            throw new Error(await response.text() || 'request failed');
-                        }
-
-                        replaceSettingsContent(await response.text());
-                    } catch (error) {
-                        alert('참가자 타입 설정 저장 중 오류가 발생했습니다.');
-                        checkbox.checked = !checkbox.checked;
-                        checkbox.disabled = false;
-                    }
-                }, {signal});
-            });
+            morningCheckbox.addEventListener('change', synchronizeFixedLectureFields, {signal});
+            afternoonCheckbox.addEventListener('change', synchronizeFixedLectureFields, {signal});
+            synchronizeFixedLectureFields();
         });
     }
 

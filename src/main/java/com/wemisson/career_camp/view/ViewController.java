@@ -19,6 +19,7 @@ import com.wemisson.career_camp.domain.participant.service.command.ParticipantLo
 import com.wemisson.career_camp.domain.participant.service.query.ParticipantRegistrationViewService;
 import com.wemisson.career_camp.domain.recruitment.service.query.RecruitmentQueryService;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentEntity;
+import com.wemisson.career_camp.domain.recruitment.service.query.LectureCatalogQueryService;
 import com.wemisson.career_camp.domain.recruitment.service.query.LectureQueryService;
 import com.wemisson.career_camp.domain.participant.service.command.LectureApplicationService;
 import com.wemisson.career_camp.domain.participant.service.draft.DraftExitReleaseService;
@@ -38,6 +39,7 @@ public class ViewController {
 
 	private final RecruitmentQueryService recruitmentService;
 	private final LectureQueryService lectureService;
+	private final LectureCatalogQueryService lectureCatalogQueryService;
 	private final LectureApplicationService lectureApplicationService;
 	private final ParticipantRegistrationViewService participantRegistrationViewService;
 	private final ParticipantLookupService participantLookupService;
@@ -112,7 +114,10 @@ public class ViewController {
 	}
 
 	@GetMapping("/lectures")
-	public String lectures(Model model) {
+	public String lectures(
+		@RequestParam(required = false) Long participantTypeId,
+		Model model
+	) {
 		RecruitmentEntity recruitmentEntity = recruitmentService.findVisibleRecruitment()
 			.orElse(null);
 
@@ -121,11 +126,16 @@ public class ViewController {
 		}
 
 		model.addAttribute("recruitment", recruitmentEntity);
-		LectureQueryService.LectureSelection lectureSelection = lectureService.findLectures(
+		LectureCatalogQueryService.LectureCatalogView catalogView = lectureCatalogQueryService.findLectureCatalog(
 			recruitmentEntity,
-			true,
-			true
+			participantTypeId
 		);
+		LectureQueryService.LectureSelection lectureSelection = catalogView.lectureSelection();
+		model.addAttribute("participantTypes", catalogView.participantTypes());
+		model.addAttribute("selectedParticipantTypeId", catalogView.selectedParticipantTypeId());
+		model.addAttribute("fixedLectureCatalog", catalogView.fixedLectures());
+		model.addAttribute("showMorningLectures", catalogView.showMorning());
+		model.addAttribute("showAfternoonLectures", catalogView.showAfternoon());
 		model.addAttribute("morningLectures", lectureSelection.morningLectures());
 		model.addAttribute("afternoonLectures", lectureSelection.afternoonLectures());
 
@@ -283,6 +293,7 @@ public class ViewController {
 		model.addAttribute("lectures", settingsView.lectures());
 		model.addAttribute("churches", settingsView.churches());
 		model.addAttribute("participantTypeRules", settingsView.participantTypeRules());
+		model.addAttribute("fixedLecturesByRuleId", settingsView.fixedLecturesByRuleId());
 
 		return "admin/settings";
 	}

@@ -10,6 +10,7 @@
 
     let clickCount = 0;
     let resetTimer = null;
+    const sessionExpiredMessage = '관리자 로그인 정보가 없거나 세션이 만료되어 요청을 처리하지 못했습니다. 입력하거나 변경한 내용은 저장되지 않았습니다. 다시 로그인한 뒤 작업을 다시 진행해주세요.';
 
     function openModal() {
         modal.classList.add('is-open');
@@ -33,6 +34,21 @@
             loginError.hidden = true;
         }
     }
+
+    async function handleAdminSessionExpiry(response) {
+        if (response.status !== 401) {
+            return false;
+        }
+
+        const result = await response.clone().json().catch(function () {
+            return {};
+        });
+
+        window.location.assign(result.redirectUrl || '/home?adminLogin=session-expired');
+        return true;
+    }
+
+    window.handleAdminSessionExpiry = handleAdminSessionExpiry;
 
     adminEntry.addEventListener('click', function (event) {
         event.preventDefault();
@@ -104,5 +120,17 @@
                 }
             }
         });
+    }
+
+    const currentUrl = new URL(window.location.href);
+    if (currentUrl.searchParams.get('adminLogin') === 'session-expired') {
+        if (loginError) {
+            loginError.textContent = sessionExpiredMessage;
+            loginError.hidden = false;
+        }
+
+        openModal();
+        currentUrl.searchParams.delete('adminLogin');
+        window.history.replaceState({}, '', currentUrl.pathname + currentUrl.search + currentUrl.hash);
     }
 })();

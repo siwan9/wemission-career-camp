@@ -131,6 +131,10 @@ async function changeRecruitmentStatus(recruitmentId, nextStatus) {
             body
         });
 
+        if (window.handleAdminSessionExpiry && await window.handleAdminSessionExpiry(response)) {
+            return;
+        }
+
         const result = await response.json().catch(() => ({
             success: false,
             message: "모집 상태 변경 응답을 확인할 수 없습니다."

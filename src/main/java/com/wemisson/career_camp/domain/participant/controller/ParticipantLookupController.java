@@ -5,7 +5,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import com.wemisson.career_camp.domain.participant.entity.ParticipantLectureEntity;
 import com.wemisson.career_camp.domain.participant.session.ParticipantSession;
 import com.wemisson.career_camp.domain.participant.service.command.ParticipantLookupService;
 
@@ -31,11 +30,11 @@ public class ParticipantLookupController {
 			return "redirect:/lookup";
 		}
 
-		ParticipantLectureEntity participantLectureEntity = participantLookupService.findParticipantLecture(
+		ParticipantLookupService.LookupEditTarget editTarget = participantLookupService.findLookupEditTarget(
 			participantLectureId
 		);
 
-		if (!participantLectureEntity.getParticipantEntity().getRecruitmentEntity().isOpen()) {
+		if (!editTarget.recruitmentOpen()) {
 			redirectAttributes.addFlashAttribute("lookupErrorMessage", "모집이 종료되어 신청 정보를 수정할 수 없습니다.");
 
 			return "redirect:/lookup";
@@ -43,8 +42,8 @@ public class ParticipantLookupController {
 
 		participantSession.startLectureEdit(
 			session,
-			participantLookupService.toCreateRequest(participantLectureEntity),
-			participantLectureId
+			editTarget.request(),
+			editTarget.participantLectureId()
 		);
 
 		return "redirect:/lecture";
@@ -62,11 +61,11 @@ public class ParticipantLookupController {
 			return "redirect:/lookup";
 		}
 
-		ParticipantLectureEntity participantLectureEntity = participantLookupService.findParticipantLecture(
+		ParticipantLookupService.LookupEditTarget editTarget = participantLookupService.findLookupEditTarget(
 			participantLectureId
 		);
 
-		if (!participantLectureEntity.getParticipantEntity().getRecruitmentEntity().isOpen()) {
+		if (!editTarget.recruitmentOpen()) {
 			redirectAttributes.addFlashAttribute("lookupErrorMessage", "모집이 종료되어 신청 정보를 수정할 수 없습니다.");
 
 			return "redirect:/lookup";
@@ -74,8 +73,8 @@ public class ParticipantLookupController {
 
 		participantSession.startParticipantEdit(
 			session,
-			participantLectureEntity.getParticipantEntity().getId(),
-			participantLectureId,
+			editTarget.participantId(),
+			editTarget.participantLectureId(),
 			true
 		);
 
@@ -94,11 +93,11 @@ public class ParticipantLookupController {
 			return "redirect:/lookup";
 		}
 
-		ParticipantLectureEntity participantLectureEntity = participantLookupService.findParticipantLecture(
+		ParticipantLookupService.LookupEditTarget editTarget = participantLookupService.findLookupEditTarget(
 			participantLectureId
 		);
 
-		if (!participantLectureEntity.getParticipantEntity().getRecruitmentEntity().isOpen()) {
+		if (!editTarget.recruitmentOpen()) {
 			redirectAttributes.addFlashAttribute("lookupErrorMessage", "모집이 종료되어 신청 정보를 삭제할 수 없습니다.");
 
 			return "redirect:/lookup";

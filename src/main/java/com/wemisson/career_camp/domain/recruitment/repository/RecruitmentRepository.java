@@ -30,6 +30,17 @@ public interface RecruitmentRepository extends JpaRepository<RecruitmentEntity, 
 	List<RecruitmentEntity> findAllForUpdateOrderByIdAsc();
 
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
+	@Query("""
+		select r
+		from RecruitmentEntity r
+		where r.status in :statuses
+		order by r.id asc
+		""")
+	List<RecruitmentEntity> findByStatusInForUpdateOrderByIdAsc(
+		@Param("statuses") List<RecruitmentStatus> statuses
+	);
+
+	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select r from RecruitmentEntity r where r.id = :id")
 	Optional<RecruitmentEntity> findByIdForUpdate(@Param("id") Long id);
 }

@@ -1141,7 +1141,7 @@ body {
     display: grid;
     grid-template-columns: minmax(96px, 140px) 1fr;
     gap: 10px;
-    align-items: center;
+    align-items: start;
     padding: 12px;
     border-radius: 12px;
     background: #f8f9fb;
@@ -1159,10 +1159,73 @@ body {
 }
 
 .participant-type-rule-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.participant-type-rule-options {
     display: flex;
     align-items: center;
     flex-wrap: wrap;
     gap: 10px;
+}
+
+.participant-type-rule-form button {
+    min-height: 42px;
+    padding: 0 14px;
+    border: 1px solid #0d6efd;
+    border-radius: 8px;
+    background: #0d6efd;
+    color: #ffffff;
+    font: inherit;
+    font-size: .88rem;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.fixed-lecture-fields {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #dfe5ec;
+}
+
+.fixed-lecture-fields[hidden] {
+    display: none;
+}
+
+.fixed-lecture-fields label {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+    color: #495057;
+    font-size: .86rem;
+    font-weight: 800;
+}
+
+.fixed-lecture-fields select {
+    width: 100%;
+    height: 44px;
+    padding: 9px 34px 9px 11px;
+    border: 1px solid #d7dee8;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #212529;
+    font: inherit;
+}
+
+.fixed-lecture-help {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: #6c757d;
+    font-size: .8rem;
+    font-weight: 650;
+    line-height: 1.45;
 }
 
 .settings-form button,
@@ -1780,10 +1843,19 @@ body {
     }
 
     .participant-type-rule-form {
-        align-items: flex-start;
+        grid-template-columns: 1fr;
+        align-items: stretch;
     }
 
     .participant-type-rule-row {
+        grid-template-columns: 1fr;
+    }
+
+    .participant-type-rule-save {
+        width: 100%;
+    }
+
+    .fixed-lecture-fields {
         grid-template-columns: 1fr;
     }
 

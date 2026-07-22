@@ -24,11 +24,14 @@ import com.wemisson.career_camp.domain.recruitment.entity.LectureEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentChurchEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentEntity;
 import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeEntity;
+import com.wemisson.career_camp.domain.recruitment.entity.RecruitmentParticipantTypeFixedLectureEntity;
 import com.wemisson.career_camp.domain.recruitment.repository.LectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentChurchRepository;
+import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeFixedLectureRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentParticipantTypeRepository;
 import com.wemisson.career_camp.domain.recruitment.repository.RecruitmentRepository;
 import com.wemisson.career_camp.domain.recruitment.service.policy.RecruitmentStatusPolicy;
+import com.wemisson.career_camp.domain.recruitment.service.query.LectureCatalogQueryService;
 import com.wemisson.career_camp.domain.recruitment.service.query.LectureQueryService;
 import com.wemisson.career_camp.domain.recruitment.service.query.RecruitmentQueryService;
 
@@ -46,9 +49,11 @@ public class AdminRecruitmentCommandService {
 	private final LectureRepository lectureRepository;
 	private final RecruitmentChurchRepository recruitmentChurchRepository;
 	private final RecruitmentParticipantTypeRepository recruitmentParticipantTypeRepository;
+	private final RecruitmentParticipantTypeFixedLectureRepository fixedLectureRepository;
 	private final ParticipantLookupService participantLookupService;
 	private final RecruitmentQueryService recruitmentService;
 	private final LectureQueryService lectureService;
+	private final LectureCatalogQueryService lectureCatalogQueryService;
 	private final RecruitmentStatusPolicy recruitmentStatusPolicy;
 	private final Clock clock;
 
@@ -86,12 +91,14 @@ public class AdminRecruitmentCommandService {
 		participantLectureDraftRepository.deleteByRecruitmentEntity(recruitmentEntity);
 		participantLectureRepository.deleteByParticipantEntityRecruitmentEntity(recruitmentEntity);
 		participantRepository.deleteByRecruitmentEntity(recruitmentEntity);
+		fixedLectureRepository.deleteByRecruitmentEntity(recruitmentEntity);
 		lectureRepository.deleteByRecruitmentEntity(recruitmentEntity);
 		recruitmentChurchRepository.deleteByRecruitmentEntity(recruitmentEntity);
 		recruitmentParticipantTypeRepository.deleteByRecruitmentEntity(recruitmentEntity);
 		recruitmentRepository.delete(recruitmentEntity);
 		recruitmentService.evictRecruitmentCaches(recruitmentId);
 		lectureService.evictLectureStaticCache(recruitmentId);
+		lectureCatalogQueryService.evictFixedLectureCache(recruitmentId);
 	}
 
 	@Transactional
@@ -168,13 +175,22 @@ public class AdminRecruitmentCommandService {
 		Long recruitmentId,
 		Long ruleId,
 		boolean canSelectMorningLecture,
-		boolean canSelectAfternoonLecture
+		boolean canSelectAfternoonLecture,
+		Long fixedMorningLectureId,
+		Long fixedAfternoonLectureId
 	) {
 		RecruitmentEntity recruitmentEntity = findRecruitment(recruitmentId);
 		RecruitmentParticipantTypeEntity rule = findParticipantTypeRule(recruitmentEntity, ruleId);
 
 		rule.updateLecturePermission(canSelectMorningLecture, canSelectAfternoonLecture);
+		synchronizeFixedLectures(
+			recruitmentEntity,
+			rule,
+			fixedMorningLectureId,
+			fixedAfternoonLectureId
+		);
 		recruitmentService.evictParticipantTypeRuleCache(recruitmentId);
+		lectureCatalogQueryService.evictFixedLectureCache(recruitmentId);
 	}
 
 	@Transactional
@@ -244,6 +260,9 @@ public class AdminRecruitmentCommandService {
 
 		if (lectureEntity.getParticipantCount() > 0 || countActiveDrafts(lectureEntity) > 0) {
 			throw new IllegalStateException("신청자 또는 임시점유가 있는 강의는 삭제할 수 없습니다.");
+		}
+		if (fixedLectureRepository.existsByLectureEntity(lectureEntity)) {
+			throw new IllegalStateException("고정 강좌로 지정된 강의는 참가자 타입 설정을 먼저 변경한 뒤 삭제해주세요.");
 		}
 
 		LectureType deletedType = lectureEntity.getType();
@@ -487,7 +506,7 @@ public class AdminRecruitmentCommandService {
 		RecruitmentEntity recruitmentEntity,
 		Long ruleId
 	) {
-		RecruitmentParticipantTypeEntity rule = recruitmentParticipantTypeRepository.findById(ruleId)
+		RecruitmentParticipantTypeEntity rule = recruitmentParticipantTypeRepository.findByIdForUpdate(ruleId)
 			.orElseThrow(() -> new IllegalArgumentException("참가자 타입 설정을 찾을 수 없습니다."));
 
 		if (!rule.getRecruitmentEntity().getId().equals(recruitmentEntity.getId())) {
@@ -555,10 +574,80 @@ public class AdminRecruitmentCommandService {
 		LectureType nextType,
 		long activeDraftCount
 	) {
-		if (lectureEntity.getType() != nextType
-			&& (lectureEntity.getParticipantCount() > 0 || activeDraftCount > 0)) {
+		if (lectureEntity.getType() == nextType) {
+			return;
+		}
+		if (lectureEntity.getParticipantCount() > 0 || activeDraftCount > 0) {
 			throw new IllegalStateException("신청자 또는 임시점유가 있는 강의의 시간대는 변경할 수 없습니다.");
 		}
+		if (fixedLectureRepository.existsByLectureEntity(lectureEntity)) {
+			throw new IllegalStateException("고정 강좌로 지정된 강의는 참가자 타입 설정을 먼저 변경한 뒤 시간대를 바꿔주세요.");
+		}
+	}
+
+	private void synchronizeFixedLectures(
+		RecruitmentEntity recruitmentEntity,
+		RecruitmentParticipantTypeEntity rule,
+		Long fixedMorningLectureId,
+		Long fixedAfternoonLectureId
+	) {
+		List<RecruitmentParticipantTypeFixedLectureEntity> existingFixedLectures = fixedLectureRepository
+			.findByRecruitmentParticipantTypeEntityOrderByLectureTypeAscIdAsc(rule);
+
+		if (!rule.usesFixedLectures()) {
+			fixedLectureRepository.deleteAll(existingFixedLectures);
+			return;
+		}
+		if (fixedMorningLectureId == null || fixedAfternoonLectureId == null) {
+			throw new IllegalArgumentException("직접 선택이 불가능한 참가자 타입은 고정 오전·오후 강좌를 모두 선택해주세요.");
+		}
+
+		synchronizeFixedLecture(
+			recruitmentEntity,
+			rule,
+			existingFixedLectures,
+			LectureType.AM,
+			fixedMorningLectureId
+		);
+		synchronizeFixedLecture(
+			recruitmentEntity,
+			rule,
+			existingFixedLectures,
+			LectureType.PM,
+			fixedAfternoonLectureId
+		);
+	}
+
+	private void synchronizeFixedLecture(
+		RecruitmentEntity recruitmentEntity,
+		RecruitmentParticipantTypeEntity rule,
+		List<RecruitmentParticipantTypeFixedLectureEntity> existingFixedLectures,
+		LectureType lectureType,
+		Long lectureId
+	) {
+		LectureEntity lectureEntity = findLectureForUpdate(recruitmentEntity, lectureId);
+
+		if (lectureEntity.getType() != lectureType) {
+			throw new IllegalArgumentException(
+				lectureType == LectureType.AM
+					? "고정 오전 강좌에는 오전 강의를 선택해주세요."
+					: "고정 오후 강좌에는 오후 강의를 선택해주세요."
+			);
+		}
+
+		RecruitmentParticipantTypeFixedLectureEntity existingFixedLecture = existingFixedLectures.stream()
+			.filter(fixedLecture -> fixedLecture.getLectureType() == lectureType)
+			.findFirst()
+			.orElse(null);
+
+		if (existingFixedLecture == null) {
+			fixedLectureRepository.save(
+				RecruitmentParticipantTypeFixedLectureEntity.create(rule, lectureEntity)
+			);
+			return;
+		}
+
+		existingFixedLecture.changeLecture(lectureEntity);
 	}
 
 	public record LectureEditSession(

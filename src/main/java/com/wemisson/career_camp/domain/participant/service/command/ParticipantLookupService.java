@@ -112,10 +112,24 @@ public class ParticipantLookupService {
 		lectureIds.add(lectureEntity.getId());
 	}
 
-	@Transactional(readOnly = true)
-	public ParticipantLectureEntity findParticipantLecture(Long participantLectureId) {
+	private ParticipantLectureEntity findParticipantLecture(Long participantLectureId) {
 		return participantLectureRepository.findById(participantLectureId)
 			.orElseThrow(() -> new IllegalArgumentException("신청 정보를 찾을 수 없습니다."));
+	}
+
+	@Transactional(readOnly = true)
+	public LookupEditTarget findLookupEditTarget(Long participantLectureId) {
+		ParticipantLectureEntity participantLectureEntity = participantLectureRepository
+			.findByIdWithLookupEditRelations(participantLectureId)
+			.orElseThrow(() -> new IllegalArgumentException("신청 정보를 찾을 수 없습니다."));
+		ParticipantEntity participantEntity = participantLectureEntity.getParticipantEntity();
+
+		return new LookupEditTarget(
+			participantLectureEntity.getId(),
+			participantEntity.getId(),
+			toCreateRequest(participantLectureEntity),
+			participantEntity.getRecruitmentEntity().isOpen()
+		);
 	}
 
 	@Transactional(readOnly = true)
@@ -187,5 +201,13 @@ public class ParticipantLookupService {
 
 			return lectureEntity.getSpeakerJob();
 		}
+	}
+
+	public record LookupEditTarget(
+		Long participantLectureId,
+		Long participantId,
+		ParticipantCreateRequest request,
+		boolean recruitmentOpen
+	) {
 	}
 }

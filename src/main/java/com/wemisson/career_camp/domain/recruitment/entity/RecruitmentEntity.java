@@ -45,13 +45,17 @@ public class RecruitmentEntity {
 	@Column(nullable = false)
 	private RecruitmentStatus status;
 
+	@Column(name = "status_changed_at", nullable = false)
+	private LocalDateTime statusChangedAt;
+
 	public static RecruitmentEntity create(
 		String name,
 		String description,
 		String notice,
 		LocalDateTime startAt,
 		LocalDateTime endAt,
-		RecruitmentStatus status
+		RecruitmentStatus status,
+		LocalDateTime statusChangedAt
 	) {
 		RecruitmentEntity recruitmentEntity = new RecruitmentEntity();
 		recruitmentEntity.name = name;
@@ -60,6 +64,7 @@ public class RecruitmentEntity {
 		recruitmentEntity.startAt = startAt;
 		recruitmentEntity.endAt = endAt;
 		recruitmentEntity.status = status;
+		recruitmentEntity.statusChangedAt = statusChangedAt;
 
 		return recruitmentEntity;
 	}
@@ -70,18 +75,26 @@ public class RecruitmentEntity {
 		String notice,
 		LocalDateTime startAt,
 		LocalDateTime endAt,
-		RecruitmentStatus status
+		RecruitmentStatus status,
+		LocalDateTime changedAt
 	) {
 		this.name = name;
 		this.description = description;
 		this.notice = notice;
 		this.startAt = startAt;
 		this.endAt = endAt;
-		this.status = status;
+		if (this.status != status) {
+			changeStatus(status, changedAt);
+		}
 	}
 
-	public void changeStatus(RecruitmentStatus status) {
+	public void changeStatus(RecruitmentStatus status, LocalDateTime changedAt) {
 		this.status = status;
+		this.statusChangedAt = changedAt;
+	}
+
+	public boolean hasUnprocessedScheduleBoundary(LocalDateTime scheduledAt) {
+		return statusChangedAt.isBefore(scheduledAt);
 	}
 
 	public boolean isOpen() {

@@ -94,7 +94,8 @@ class AdminRecruitmentCommandServiceTest {
 			"공지",
 			LocalDateTime.now(clock).minusDays(1),
 			LocalDateTime.now(clock).plusDays(1),
-			RecruitmentStatus.CLOSED
+			RecruitmentStatus.CLOSED,
+			LocalDateTime.now(clock)
 		));
 		studentType = participantTypeRepository.save(ParticipantTypeEntity.from(ParticipantType.STUDENT));
 		church = recruitmentChurchRepository.save(
@@ -168,7 +169,8 @@ class AdminRecruitmentCommandServiceTest {
 			"공지",
 			LocalDateTime.now(clock).minusDays(1),
 			LocalDateTime.now(clock).plusDays(1),
-			RecruitmentStatus.CLOSED
+			RecruitmentStatus.CLOSED,
+			LocalDateTime.now(clock)
 		));
 
 		assertThatThrownBy(() -> adminRecruitmentCommandService.changeRecruitmentStatus(
@@ -204,7 +206,8 @@ class AdminRecruitmentCommandServiceTest {
 			"공지",
 			LocalDateTime.now(clock).minusDays(1),
 			LocalDateTime.now(clock).plusDays(1),
-			RecruitmentStatus.WAITING
+			RecruitmentStatus.WAITING,
+			LocalDateTime.now(clock)
 		));
 		recruitmentChurchRepository.save(RecruitmentChurchEntity.create(waitingRecruitment, "대기중 교회", 1));
 		recruitmentParticipantTypeRepository.save(
@@ -235,7 +238,8 @@ class AdminRecruitmentCommandServiceTest {
 			"공지",
 			LocalDateTime.now(clock).minusSeconds(10),
 			LocalDateTime.now(clock).plusDays(1),
-			RecruitmentStatus.CLOSED
+			RecruitmentStatus.CLOSED,
+			LocalDateTime.now(clock)
 		));
 		RecruitmentEntity waitingRecruitment = recruitmentRepository.save(RecruitmentEntity.create(
 			"대기중 모집",
@@ -243,7 +247,8 @@ class AdminRecruitmentCommandServiceTest {
 			"공지",
 			LocalDateTime.now(clock).plusDays(1),
 			LocalDateTime.now(clock).plusDays(2),
-			RecruitmentStatus.WAITING
+			RecruitmentStatus.WAITING,
+			LocalDateTime.now(clock)
 		));
 
 		recruitmentStatusScheduler.synchronizeRecruitmentStatus();
@@ -256,7 +261,7 @@ class AdminRecruitmentCommandServiceTest {
 
 	@Test
 	void 스케줄러는_시작시각이_되면_대기중_모집을_즉시_연다() {
-		recruitment.changeStatus(RecruitmentStatus.WAITING);
+		recruitment.changeStatus(RecruitmentStatus.WAITING, recruitment.getStartAt().minusSeconds(1));
 		recruitmentRepository.saveAndFlush(recruitment);
 
 		recruitmentStatusScheduler.synchronizeRecruitmentStatus();
@@ -273,7 +278,8 @@ class AdminRecruitmentCommandServiceTest {
 			recruitment.getNotice(),
 			LocalDateTime.now(clock).minusDays(1),
 			LocalDateTime.now(clock).minusSeconds(1),
-			RecruitmentStatus.OPEN
+			RecruitmentStatus.OPEN,
+			LocalDateTime.now(clock).minusMinutes(1)
 		);
 		recruitmentRepository.saveAndFlush(recruitment);
 
@@ -284,6 +290,46 @@ class AdminRecruitmentCommandServiceTest {
 	}
 
 	@Test
+	void 종료시각_이후_관리자가_다시_연_모집은_스케줄러가_닫지_않는다() {
+		LocalDateTime now = LocalDateTime.now(clock);
+		recruitment.update(
+			recruitment.getName(),
+			recruitment.getDescription(),
+			recruitment.getNotice(),
+			now.minusDays(1),
+			now.minusMinutes(5),
+			RecruitmentStatus.OPEN,
+			now
+		);
+		recruitmentRepository.saveAndFlush(recruitment);
+
+		recruitmentStatusScheduler.synchronizeRecruitmentStatus();
+
+		assertThat(recruitmentRepository.findById(recruitment.getId()).orElseThrow().getStatus())
+			.isEqualTo(RecruitmentStatus.OPEN);
+	}
+
+	@Test
+	void 시작시각_이후_관리자가_대기중으로_변경한_모집은_스케줄러가_열지_않는다() {
+		LocalDateTime now = LocalDateTime.now(clock);
+		recruitment.update(
+			recruitment.getName(),
+			recruitment.getDescription(),
+			recruitment.getNotice(),
+			now.minusMinutes(5),
+			now.plusDays(1),
+			RecruitmentStatus.WAITING,
+			now
+		);
+		recruitmentRepository.saveAndFlush(recruitment);
+
+		recruitmentStatusScheduler.synchronizeRecruitmentStatus();
+
+		assertThat(recruitmentRepository.findById(recruitment.getId()).orElseThrow().getStatus())
+			.isEqualTo(RecruitmentStatus.WAITING);
+	}
+
+	@Test
 	void 서로_다른_모집을_동시에_열어도_하나의_모집만_열린다() throws Exception {
 		RecruitmentEntity otherRecruitment = recruitmentRepository.save(RecruitmentEntity.create(
 			"다른 모집",
@@ -291,7 +337,8 @@ class AdminRecruitmentCommandServiceTest {
 			"공지",
 			LocalDateTime.now(clock).minusDays(1),
 			LocalDateTime.now(clock).plusDays(1),
-			RecruitmentStatus.CLOSED
+			RecruitmentStatus.CLOSED,
+			LocalDateTime.now(clock)
 		));
 		recruitmentChurchRepository.save(RecruitmentChurchEntity.create(otherRecruitment, "다른 교회", 1));
 		recruitmentParticipantTypeRepository.save(

@@ -102,7 +102,8 @@ class LectureApplicationConcurrencyTest {
 			"공지",
 			LocalDateTime.now(clock).minusDays(1),
 			LocalDateTime.now(clock).plusDays(1),
-			RecruitmentStatus.OPEN
+			RecruitmentStatus.OPEN,
+			LocalDateTime.now(clock)
 		));
 		studentType = participantTypeRepository.save(ParticipantTypeEntity.from(ParticipantType.STUDENT));
 		church = recruitmentChurchRepository.save(RecruitmentChurchEntity.create(recruitment, "테스트 교회", 1));
@@ -497,7 +498,8 @@ class LectureApplicationConcurrencyTest {
 			"공지",
 			LocalDateTime.now(clock).minusDays(1),
 			LocalDateTime.now(clock).plusDays(1),
-			RecruitmentStatus.CLOSED
+			RecruitmentStatus.CLOSED,
+			LocalDateTime.now(clock)
 		));
 		LectureEntity otherLecture = lectureRepository.save(
 			LectureEntity.create(otherRecruitment, "다른 오전", "강사", "설명", LectureType.AM, true, 10, 1)

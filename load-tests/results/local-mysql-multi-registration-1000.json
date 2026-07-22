@@ -1,0 +1,428 @@
+{
+    "metrics": {
+        "late_capacity_rejection{lecture_pair:am-5-pm-10}": {
+            "fails": 0,
+            "passes": 100,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "capacity_rejection": {
+            "count": 750,
+            "rate": 12.529964993616733
+        },
+        "late_admission_violation{lecture_pair:am-1-pm-6}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "registration_success{lecture_pair:am-5-pm-10}": {
+            "count": 50,
+            "rate": 0.8353309995744489,
+            "thresholds": {
+                "count==50": false
+            }
+        },
+        "late_admission_violation{lecture_pair:am-3-pm-8}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "vus_max": {
+            "value": 1000,
+            "min": 1000,
+            "max": 1000
+        },
+        "registration_success": {
+            "rate": 4.1766549978722445,
+            "count": 250,
+            "thresholds": {
+                "count==250": false
+            }
+        },
+        "http_reqs": {
+            "count": 3751,
+            "rate": 62.66653158807516
+        },
+        "http_req_failed{endpoint:register_page}": {
+            "passes": 0,
+            "fails": 1000,
+            "thresholds": {
+                "rate==0": false
+            },
+            "value": 0
+        },
+        "unexpected_flow_error{lecture_pair:am-3-pm-8}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "late_capacity_rejection{lecture_pair:am-1-pm-6}": {
+            "passes": 100,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "late_capacity_rejection": {
+            "passes": 500,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "completion_page_success{lecture_pair:am-1-pm-6}": {
+            "fails": 0,
+            "passes": 50,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "late_admission_violation{lecture_pair:am-5-pm-10}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "unexpected_flow_error": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "http_req_duration{expected_response:true}": {
+            "p(90)": 2168.47,
+            "p(95)": 2410.28,
+            "avg": 1342.6474462809947,
+            "min": 3.604,
+            "med": 1389.773,
+            "max": 4124.025
+        },
+        "registration_success{lecture_pair:am-3-pm-8}": {
+            "count": 50,
+            "rate": 0.8353309995744489,
+            "thresholds": {
+                "count==50": false
+            }
+        },
+        "registration_success{lecture_pair:am-2-pm-7}": {
+            "count": 50,
+            "rate": 0.8353309995744489,
+            "thresholds": {
+                "count==50": false
+            }
+        },
+        "http_req_receiving": {
+            "med": 0.078,
+            "max": 31.805,
+            "p(90)": 0.68,
+            "p(95)": 1.0249999999999986,
+            "avg": 0.2947488669688082,
+            "min": 0.008
+        },
+        "http_req_connecting": {
+            "med": 0,
+            "max": 59.221,
+            "p(90)": 17.949,
+            "p(95)": 27.30199999999999,
+            "avg": 4.001826446280991,
+            "min": 0
+        },
+        "http_req_failed{endpoint:finalize}": {
+            "passes": 0,
+            "fails": 250,
+            "thresholds": {
+                "rate==0": false
+            },
+            "value": 0
+        },
+        "registration_success{lecture_pair:am-4-pm-9}": {
+            "count": 50,
+            "rate": 0.8353309995744489,
+            "thresholds": {
+                "count==50": false
+            }
+        },
+        "unexpected_flow_error{lecture_pair:am-1-pm-6}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "http_req_waiting": {
+            "avg": 1341.8483263129838,
+            "min": 3.48,
+            "med": 1389.705,
+            "max": 4123.959,
+            "p(90)": 2168.147,
+            "p(95)": 2409.6855
+        },
+        "vus": {
+            "min": 6,
+            "max": 1000,
+            "value": 6
+        },
+        "registration_prepared": {
+            "passes": 1000,
+            "fails": 0,
+            "thresholds": {
+                "rate>0.999": false
+            },
+            "value": 1
+        },
+        "late_admission_violation{lecture_pair:am-4-pm-9}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "prepared_before_race": {
+            "passes": 1000,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "http_req_blocked": {
+            "med": 0.004,
+            "max": 63.165,
+            "p(90)": 18.076,
+            "p(95)": 27.403,
+            "avg": 4.058654758731203,
+            "min": 0
+        },
+        "http_req_failed{endpoint:complete_page}": {
+            "passes": 0,
+            "fails": 250,
+            "thresholds": {
+                "rate==0": false
+            },
+            "value": 0
+        },
+        "finalize_duration": {
+            "p(90)": 1602.7739000000001,
+            "p(95)": 1889.9769,
+            "avg": 832.6778959999994,
+            "min": 35.275,
+            "med": 702.2840000000001,
+            "max": 2552.627,
+            "thresholds": {
+                "p(99)<10000": false,
+                "p(95)<5000": false
+            }
+        },
+        "completion_page_success{lecture_pair:am-3-pm-8}": {
+            "passes": 50,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "late_capacity_rejection{lecture_pair:am-4-pm-9}": {
+            "passes": 100,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "completion_page_success{lecture_pair:am-4-pm-9}": {
+            "passes": 50,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "unexpected_flow_error{lecture_pair:am-4-pm-9}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "hold_duration": {
+            "max": 4124.025,
+            "p(90)": 2480.0829000000003,
+            "p(95)": 2738.3429,
+            "avg": 1758.6123352000031,
+            "min": 307.164,
+            "med": 1705.844,
+            "thresholds": {
+                "p(95)<5000": false,
+                "p(99)<10000": false
+            }
+        },
+        "late_capacity_rejection{lecture_pair:am-3-pm-8}": {
+            "passes": 100,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "http_req_duration": {
+            "p(90)": 2168.47,
+            "p(95)": 2410.28,
+            "avg": 1342.6474462809947,
+            "min": 3.604,
+            "med": 1389.773,
+            "max": 4124.025
+        },
+        "iteration_duration": {
+            "p(95)": 59576.6160976,
+            "avg": 57664.537099879075,
+            "min": 56089.757416,
+            "med": 57352.0389165,
+            "max": 59805.698833,
+            "p(90)": 59468.2893673
+        },
+        "iterations": {
+            "count": 1000,
+            "rate": 16.706619991488978
+        },
+        "unexpected_flow_error{lecture_pair:am-2-pm-7}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "completion_page_success{lecture_pair:am-5-pm-10}": {
+            "fails": 0,
+            "passes": 50,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "completion_page_success": {
+            "passes": 250,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "registration_success{lecture_pair:am-1-pm-6}": {
+            "rate": 0.8353309995744489,
+            "count": 50,
+            "thresholds": {
+                "count==50": false
+            }
+        },
+        "data_sent": {
+            "count": 832478,
+            "rate": 13907.893597274762
+        },
+        "late_admission_violation{lecture_pair:am-2-pm-7}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "late_admission_violation": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "data_received": {
+            "count": 12054485,
+            "rate": 201389.70008810403
+        },
+        "checks": {
+            "passes": 250,
+            "fails": 0,
+            "value": 1
+        },
+        "http_req_sending": {
+            "avg": 0.5043711010397182,
+            "min": 0.002,
+            "med": 0.018,
+            "max": 46.15,
+            "p(90)": 0.931,
+            "p(95)": 2.448
+        },
+        "http_req_tls_handshaking": {
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0,
+            "avg": 0
+        },
+        "unexpected_flow_error{lecture_pair:am-5-pm-10}": {
+            "count": 0,
+            "rate": 0,
+            "thresholds": {
+                "count==0": false
+            }
+        },
+        "http_req_failed{endpoint:registration_form}": {
+            "passes": 0,
+            "fails": 1000,
+            "thresholds": {
+                "rate==0": false
+            },
+            "value": 0
+        },
+        "completion_page_success{lecture_pair:am-2-pm-7}": {
+            "passes": 50,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        },
+        "http_req_failed": {
+            "passes": 0,
+            "fails": 3751,
+            "value": 0
+        },
+        "late_capacity_rejection{lecture_pair:am-2-pm-7}": {
+            "passes": 100,
+            "fails": 0,
+            "thresholds": {
+                "rate==1": false
+            },
+            "value": 1
+        }
+    },
+    "setup_data": {
+        "raceAtMs": 1784696671000
+    },
+    "root_group": {
+        "checks": {
+            "최종 완료 페이지에 신청자 표시": {
+                "name": "최종 완료 페이지에 신청자 표시",
+                "path": "::최종 완료 페이지에 신청자 표시",
+                "id": "7b02c1ef3aeac893e2ed5f776f89d5c8",
+                "passes": 250,
+                "fails": 0
+            }
+        },
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {}
+    }
+}

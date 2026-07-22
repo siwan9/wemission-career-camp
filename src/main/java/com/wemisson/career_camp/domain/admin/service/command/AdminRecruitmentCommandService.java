@@ -65,6 +65,7 @@ public class AdminRecruitmentCommandService {
 		LocalDateTime startAt,
 		LocalDateTime endAt
 	) {
+		LocalDateTime now = LocalDateTime.now(clock);
 		RecruitmentEntity recruitmentEntity = recruitmentRepository.save(
 			RecruitmentEntity.create(
 				name,
@@ -72,7 +73,8 @@ public class AdminRecruitmentCommandService {
 				notice,
 				startAt,
 				endAt,
-				RecruitmentStatus.CLOSED
+				RecruitmentStatus.CLOSED,
+				now
 			)
 		);
 		createParticipantTypeRules(recruitmentEntity);
@@ -134,9 +136,10 @@ public class AdminRecruitmentCommandService {
 		RecruitmentStatus status
 	) {
 		RecruitmentEntity recruitmentEntity = findRecruitmentForStatusChange(recruitmentId);
+		LocalDateTime now = LocalDateTime.now(clock);
 
 		validateRecruitmentStatusChange(recruitmentEntity, status);
-		recruitmentEntity.update(name, description, notice, startAt, endAt, status);
+		recruitmentEntity.update(name, description, notice, startAt, endAt, status, now);
 		recruitmentService.evictRecruitmentCaches(recruitmentId);
 	}
 
@@ -152,7 +155,7 @@ public class AdminRecruitmentCommandService {
 		}
 
 		validateRecruitmentStatusChange(recruitmentEntity, nextStatus);
-		recruitmentEntity.changeStatus(nextStatus);
+		recruitmentEntity.changeStatus(nextStatus, LocalDateTime.now(clock));
 		recruitmentService.evictRecruitmentCaches(recruitmentId);
 
 		return nextStatus;
@@ -164,7 +167,7 @@ public class AdminRecruitmentCommandService {
 		RecruitmentStatus nextStatus = getNextRecruitmentStatus(recruitmentEntity);
 
 		validateRecruitmentStatusChange(recruitmentEntity, nextStatus);
-		recruitmentEntity.changeStatus(nextStatus);
+		recruitmentEntity.changeStatus(nextStatus, LocalDateTime.now(clock));
 		recruitmentService.evictRecruitmentCaches(recruitmentId);
 
 		return nextStatus;

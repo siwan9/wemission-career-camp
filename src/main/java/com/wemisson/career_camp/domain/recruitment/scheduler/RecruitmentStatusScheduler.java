@@ -42,8 +42,10 @@ public class RecruitmentStatusScheduler {
 		);
 
 		for (RecruitmentEntity recruitment : recruitments) {
-			if ((recruitment.isOpen() || recruitment.isWaiting()) && !now.isBefore(recruitment.getEndAt())) {
-				recruitment.changeStatus(RecruitmentStatus.CLOSED);
+			if ((recruitment.isOpen() || recruitment.isWaiting())
+				&& !now.isBefore(recruitment.getEndAt())
+				&& recruitment.hasUnprocessedScheduleBoundary(recruitment.getEndAt())) {
+				recruitment.changeStatus(RecruitmentStatus.CLOSED, now);
 				recruitmentService.evictRecruitmentCaches(recruitment.getId());
 			}
 		}
@@ -55,11 +57,12 @@ public class RecruitmentStatusScheduler {
 		for (RecruitmentEntity recruitment : recruitments) {
 			if (!recruitment.isWaiting()
 				|| now.isBefore(recruitment.getStartAt())
-				|| !now.isBefore(recruitment.getEndAt())) {
+				|| !now.isBefore(recruitment.getEndAt())
+				|| !recruitment.hasUnprocessedScheduleBoundary(recruitment.getStartAt())) {
 				continue;
 			}
 			if (recruitmentStatusPolicy.canOpenAutomatically(recruitment)) {
-				recruitment.changeStatus(RecruitmentStatus.OPEN);
+				recruitment.changeStatus(RecruitmentStatus.OPEN, now);
 				recruitmentService.evictRecruitmentCaches(recruitment.getId());
 				return;
 			}

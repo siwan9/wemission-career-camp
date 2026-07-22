@@ -106,7 +106,14 @@ public class AdminRecruitmentController {
 		@PathVariable Long recruitmentId,
 		RedirectAttributes redirectAttributes
 	) {
-		adminRecruitmentCommandService.deleteRecruitment(recruitmentId);
+		try {
+			adminRecruitmentCommandService.deleteRecruitment(recruitmentId);
+		} catch (IllegalArgumentException | IllegalStateException e) {
+			redirectAttributes.addFlashAttribute("operationErrorMessage", e.getMessage());
+
+			return "redirect:/admin/home";
+		}
+
 		redirectAttributes.addFlashAttribute("successMessage", "모집이 삭제되었습니다.");
 
 		return "redirect:/admin/home";

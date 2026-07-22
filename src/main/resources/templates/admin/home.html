@@ -81,6 +81,12 @@
             th:text="${errorMessage}">
         오류가 발생했습니다.
     </div>
+    <div
+            th:if="${operationErrorMessage != null}"
+            class="admin-home-alert error"
+            th:text="${operationErrorMessage}">
+        요청을 처리할 수 없습니다.
+    </div>
 
     <section
             class="section recruitment-create-section"
@@ -285,7 +291,8 @@
                                 <button
                                         type="submit"
                                         class="recruitment-delete-btn"
-                                        aria-label="모집 삭제"
+                                        th:disabled="${recruitment.status.name() != 'CLOSED'}"
+                                        th:attr="aria-label=${recruitment.status.name() == 'CLOSED' ? '모집 삭제' : '종료 후 삭제할 수 있습니다.'},title=${recruitment.status.name() == 'CLOSED' ? '모집 삭제' : '모집중 또는 대기중인 모집은 종료 후 삭제할 수 있습니다.'}"
                                         onclick="return confirm('해당 모집과 참가자, 신청 내역이 모두 삭제됩니다. 계속할까요?')">
                                     <svg
                                             aria-hidden="true"

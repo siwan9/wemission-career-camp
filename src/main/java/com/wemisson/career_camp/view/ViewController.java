@@ -30,6 +30,7 @@ import com.wemisson.career_camp.domain.participant.entity.ParticipantLectureDraf
 import static com.wemisson.career_camp.domain.admin.controller.AdminAuthController.ADMIN_ID_SESSION_KEY;
 import static com.wemisson.career_camp.domain.admin.controller.AdminAuthController.ADMIN_NAME_SESSION_KEY;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 
@@ -51,10 +52,13 @@ public class ViewController {
 	@GetMapping("/home")
 	public String home(
 		Model model,
-		HttpSession session
+		HttpServletRequest request
 	) {
-		clearRegistration(session);
-		participantSession.clearLookup(session);
+		HttpSession session = request.getSession(false);
+		if (session != null) {
+			clearRegistration(session);
+			participantSession.clearLookup(session);
+		}
 		RecruitmentEntity currentRecruitment = recruitmentService.findVisibleRecruitment()
 			.orElse(null);
 

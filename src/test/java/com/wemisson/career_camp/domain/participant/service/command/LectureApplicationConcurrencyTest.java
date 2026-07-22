@@ -17,6 +17,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.ui.ExtendedModelMap;
@@ -128,6 +129,16 @@ class LectureApplicationConcurrencyTest {
 	@AfterEach
 	void tearDown() {
 		clearData();
+	}
+
+	@Test
+	void 세션이_없는_홈_조회는_새_세션을_만들지_않는다() {
+		MockHttpServletRequest request = new MockHttpServletRequest();
+
+		String view = viewController.home(new ExtendedModelMap(), request);
+
+		assertThat(view).isEqualTo("home");
+		assertThat(request.getSession(false)).isNull();
 	}
 
 	@Test

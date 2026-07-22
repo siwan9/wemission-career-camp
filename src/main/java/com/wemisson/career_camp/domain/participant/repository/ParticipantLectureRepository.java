@@ -23,6 +23,16 @@ public interface ParticipantLectureRepository extends JpaRepository<ParticipantL
 
 	Optional<ParticipantLectureEntity> findByParticipantEntity(ParticipantEntity participantEntity);
 
+	@Query("""
+		select morning.id as morningLectureId,
+			afternoon.id as afternoonLectureId
+		from ParticipantLectureEntity pl
+			left join pl.morningLectureEntity morning
+			left join pl.afternoonLectureEntity afternoon
+		where pl.id = :id
+		""")
+	Optional<SelectedLectureIdsProjection> findSelectedLectureIdsById(@Param("id") Long id);
+
 	@Lock(LockModeType.PESSIMISTIC_WRITE)
 	@Query("select pl from ParticipantLectureEntity pl where pl.id = :id")
 	Optional<ParticipantLectureEntity> findByIdForUpdate(@Param("id") Long id);
@@ -116,4 +126,10 @@ public interface ParticipantLectureRepository extends JpaRepository<ParticipantL
 	);
 
 	void deleteByParticipantEntityRecruitmentEntity(RecruitmentEntity recruitmentEntity);
+
+	interface SelectedLectureIdsProjection {
+		Long getMorningLectureId();
+
+		Long getAfternoonLectureId();
+	}
 }

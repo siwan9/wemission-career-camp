@@ -55,7 +55,6 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
 	}
 
 	private boolean isLoginRequest(HttpServletRequest request) {
-		return "/admin/login".equals(request.getRequestURI())
-			&& "POST".equalsIgnoreCase(request.getMethod());
+		return "/admin/login".equals(request.getRequestURI());
 	}
 }

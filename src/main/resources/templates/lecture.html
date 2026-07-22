@@ -508,8 +508,16 @@
                 await synchronizeDraftState('처리 결과를 확인했습니다.', expectedDraftState);
                 return;
             }
-            skipDraftReleaseOnExit = false;
-            showFlashToast('처리 중 오류가 발생했습니다.', false);
+
+            const completed = await recoverFinalizationOutcome();
+            if (!completed) {
+                skipDraftReleaseOnExit = false;
+                await synchronizeDraftState(
+                    '최종 신청 완료 여부를 확인했습니다. 완료되지 않았다면 다시 시도해주세요.',
+                    null,
+                    false
+                );
+            }
         } finally {
             if (isFinalizeForm) {
                 const finalizeButton = document.querySelector('[data-finalize-button]');
@@ -551,13 +559,25 @@
                 return true;
             }
         } catch (error) {
-            window.location.reload();
+            return false;
         }
 
         return false;
     }
 
-	    async function synchronizeDraftState(message, expectedDraftState, success = true) {
+    async function recoverFinalizationOutcome() {
+        for (let attempt = 0; attempt < 3; attempt++) {
+            if (await redirectCompletedApplicationFromRestoredPage()) {
+                return true;
+            }
+
+            await delay(700 * (attempt + 1));
+        }
+
+        return false;
+    }
+
+    async function synchronizeDraftState(message, expectedDraftState, success = true) {
         const requestSeq = ++latestRequestSeq;
 
         try {

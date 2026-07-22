@@ -57,16 +57,15 @@ public class ParticipantRegistrationViewService {
 		participantRepository.save(participantEntity);
 	}
 
-	@Transactional(readOnly = true)
 	public SelectedLectureIds findSelectedLectureIds(Long participantLectureId) {
 		if (participantLectureId == null) {
 			return SelectedLectureIds.empty();
 		}
 
-		return participantLectureRepository.findById(participantLectureId)
-			.map(participantLecture -> new SelectedLectureIds(
-				getMorningLectureId(participantLecture),
-				getAfternoonLectureId(participantLecture)
+		return participantLectureRepository.findSelectedLectureIdsById(participantLectureId)
+			.map(selectedLectureIds -> new SelectedLectureIds(
+				selectedLectureIds.getMorningLectureId(),
+				selectedLectureIds.getAfternoonLectureId()
 			))
 			.orElseGet(SelectedLectureIds::empty);
 	}
@@ -127,22 +126,6 @@ public class ParticipantRegistrationViewService {
 			participantEntity.getRecruitmentChurchEntity().getId(),
 			participantEntity.getPhoneNumber()
 		);
-	}
-
-	private Long getMorningLectureId(ParticipantLectureEntity participantLectureEntity) {
-		if (participantLectureEntity.getMorningLectureEntity() == null) {
-			return null;
-		}
-
-		return participantLectureEntity.getMorningLectureEntity().getId();
-	}
-
-	private Long getAfternoonLectureId(ParticipantLectureEntity participantLectureEntity) {
-		if (participantLectureEntity.getAfternoonLectureEntity() == null) {
-			return null;
-		}
-
-		return participantLectureEntity.getAfternoonLectureEntity().getId();
 	}
 
 	public record SelectedLectureIds(
